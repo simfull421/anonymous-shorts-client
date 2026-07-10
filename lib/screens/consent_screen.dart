@@ -21,9 +21,9 @@ class _ConsentScreenState extends State<ConsentScreen> {
 
   bool get _allChecked => _privacyChecked && _termsChecked && _responsibilityChecked;
 
-  // 노션 호스팅 법적 문서 URL
-  static const String _privacyUrl = 'https://shining-juice-96b.notion.site/393cbc2f0ed4807b8fe7fd0e32d848fe';
-  static const String _termsUrl = 'https://shining-juice-96b.notion.site/393cbc2f0ed480bd9606c0751447605e';
+  // GitHub Pages 호스팅 법적 문서 URL
+  static const String _privacyUrl = 'https://simfull421.github.io/anonymous-shorts-privacy/privacy_policy.html';
+  static const String _termsUrl = 'https://simfull421.github.io/anonymous-shorts-privacy/terms_of_service.html';
 
   Future<void> _acceptAndContinue() async {
     if (!_allChecked) return;
