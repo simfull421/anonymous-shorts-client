@@ -394,10 +394,72 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
           if (!isBlind) ...[
             const SizedBox(height: 10),
-            // 투표 통계
-            Text(
-              '총 ${short.totalVotes}표',
-              style: AppTheme.captionStyle,
+            // 투표 통계: 각 반응별 텍스트 + 투표수 + 비율 바
+            // 득표율 1등 = 보라 강조, 나머지 = 회색 (피드 화면 시각 문법 통일)
+            ...() {
+              final total = short.computedTotalVotes;
+              final maxVotes = short.buttons.fold<int>(0, (max, btn) => btn.votes > max ? btn.votes : max);
+              return short.buttons.map((btn) {
+                final ratio = total > 0 ? btn.votes.toDouble() / total.toDouble() : 0.0;
+                final percent = (ratio * 100).toStringAsFixed(0);
+                final isWinner = total > 0 && btn.votes == maxVotes;
+                final barColor = isWinner
+                    ? const Color(0xFF6C5CE7) // 보라 (1등)
+                    : Colors.white24;          // 회색 (나머지)
+                final textColor = isWinner
+                    ? const Color(0xFF6C5CE7)
+                    : Colors.white38;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              btn.text,
+                              style: TextStyle(
+                                color: isWinner ? Colors.white70 : Colors.white38,
+                                fontSize: isWinner ? 14 : 13,
+                                fontWeight: isWinner ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '${btn.votes}표 ($percent%)',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: isWinner ? 13 : 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: ratio,
+                          backgroundColor: Colors.white10,
+                          valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                          minHeight: 6,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              });
+            }(),
+            // 총 투표수 요약
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                '총 ${short.computedTotalVotes}표',
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
+              ),
             ),
           ],
 

@@ -100,13 +100,7 @@ class ShortsModel {
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) return DateTime.now();
     if (value is String) {
-      // 서버는 UTC로 반환하지만 'Z' suffix가 없을 수 있음
-      // UTC로 강제 해석하여 로컬 변환 시 정확한 상대 시간 계산
-      String s = value;
-      if (!s.endsWith('Z') && !s.contains('+')) {
-        s = '${s}Z'; // UTC 명시
-      }
-      return DateTime.tryParse(s)?.toUtc() ?? DateTime.now();
+      return DateTime.tryParse(value)?.toLocal() ?? DateTime.now();
     }
     return DateTime.now();
   }
