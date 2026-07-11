@@ -85,7 +85,7 @@ class ShortsModel {
           (json['Votes'] ?? json['votes'] ?? json['total_votes'] ?? 0) as int,
       bgmId: json['BgmId'] ?? json['bgm_id'],
       status: (json['Status'] ?? json['status'] ?? 'Active') as String,
-      createdAt: _parseDateTime(json['CreatedAt'] ?? json['created_at']),
+      createdAt: _parseDateTime(json['CreatedAt'] ?? json['createdAt'] ?? json['created_at']),
       isAd: (json['IsAd'] ?? json['isAd'] ?? false) as bool,
       targetUrl: json['TargetUrl'] ?? json['targetUrl'],
       creatorHash: json['CreatorHash'] ?? json['creatorHash'],
@@ -100,7 +100,12 @@ class ShortsModel {
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) return DateTime.now();
     if (value is String) {
-      return DateTime.tryParse(value)?.toLocal() ?? DateTime.now();
+      print('[TIME DEBUG] raw value: "$value"');
+      final parsed = DateTime.tryParse(value);
+      print('[TIME DEBUG] parsed: $parsed, isUtc: ${parsed?.isUtc}');
+      final local = parsed?.toLocal();
+      print('[TIME DEBUG] toLocal: $local');
+      return local ?? DateTime.now();
     }
     return DateTime.now();
   }

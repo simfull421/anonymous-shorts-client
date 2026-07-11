@@ -484,7 +484,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
   String _formatTime(DateTime time) {
     // 서버에서 UTC로 내려온 시간을 로컬 시간으로 변환
     final localTime = time.toLocal();
-    final diff = DateTime.now().difference(localTime);
+    final now = DateTime.now();
+    final diff = now.difference(localTime);
+    print('[FORMAT DEBUG] input: $time, isUtc: ${time.isUtc}');
+    print('[FORMAT DEBUG] localTime: $localTime, now: $now');
+    print('[FORMAT DEBUG] diff: ${diff.inMinutes}분 (${diff.inSeconds}초)');
     if (diff.inMinutes < 1) return '방금 전';
     if (diff.inMinutes < 60) return '${diff.inMinutes}분 전';
     if (diff.inHours < 24) return '${diff.inHours}시간 전';
