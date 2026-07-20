@@ -4,7 +4,7 @@
 // - 크레딧 10 소모 (WRITE_CREDIT_COST)
 import 'dart:convert';
 import 'package:flutter/material.dart';
-// import 'package:url_launcher/url_launcher.dart'; // BGM v1.1에서 활성화
+import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
 import '../services/api_service.dart';
 import '../utils/credit_manager.dart';
@@ -190,9 +190,8 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 헤더
+            // 헤더 (+ 크레딧 소모 칩)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   '쇼츠 작성',
@@ -202,6 +201,24 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '크레딧 -${CreditManager.writeCost}',
+                    style: const TextStyle(
+                      color: AppTheme.accentColor,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const Spacer(),
                 Text(
                   '$_totalChars / $_maxTotalChars자',
                   style: TextStyle(
@@ -283,44 +300,19 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                 style: TextButton.styleFrom(foregroundColor: Colors.white54),
               ),
 
-            const SizedBox(height: 16),
-
-            // 크레딧 안내 (제출 중에는 경고 숨김)
-            if (!_isSubmitting && !CreditManager.canWrite)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '크레딧이 부족해요! 다른 쇼츠에 투표하면 크레딧을 모을 수 있어요 💪',
-                        style: TextStyle(color: Colors.redAccent.shade100, fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Text(
-                '💰 크레딧 잔액: ${CreditManager.balance} (작성 시 ${CreditManager.writeCost} 소모)',
-                style: AppTheme.captionStyle,
-              ),
             const SizedBox(height: 12),
 
-            // 법적 경고 안내
-            const Text(
-              '⚠️ 타인의 신상 유포, 명예훼손 및 불법 콘텐츠 작성 시\nIP 기록 등을 통해 법적 처벌의 대상이 될 수 있습니다.',
-              style: TextStyle(color: Colors.white38, fontSize: 11, height: 1.4),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
+            // 크레딧 부족 시에만 부드러운 안내 (한 줄)
+            if (!_isSubmitting && !CreditManager.canWrite)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  '투표로 크레딧을 모으면 글을 쓸 수 있어요 (${CreditManager.balance}/${CreditManager.writeCost})',
+                  style: const TextStyle(
+                      color: AppTheme.secondaryAccent, fontSize: 12.5),
+                  textAlign: TextAlign.center,
+                ),
+              ),
 
             // B8: 제출 에러 메시지 (금지어/모더레이션 등)
             if (_submitError != null)
@@ -364,7 +356,42 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                       ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
+
+            // 커뮤니티 가이드라인 안내 (부드러운 톤 + 상세는 링크로)
+            Center(
+              child: GestureDetector(
+                onTap: () async {
+                  final uri = Uri.parse(
+                      'https://simfull421.github.io/anonymous-shorts-privacy/terms_of_service.html');
+                  try {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } catch (_) {}
+                },
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '모든 쇼츠는 건강한 커뮤니티를 위해 가이드라인에 따라 검토돼요 · ',
+                        style: TextStyle(color: Colors.white38, fontSize: 11),
+                      ),
+                      TextSpan(
+                        text: '자세히',
+                        style: TextStyle(
+                          color: AppTheme.secondaryAccent.withValues(alpha: 0.8),
+                          fontSize: 11,
+                          decoration: TextDecoration.underline,
+                          decorationColor:
+                              AppTheme.secondaryAccent.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

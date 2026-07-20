@@ -18,6 +18,7 @@ class VoteButton extends StatefulWidget {
   final int? votedIndex; // 내가 투표한 버튼 index (null = 미투표)
   final VoidCallback onVoteSuccess;
   final VoidCallback onVoteFailed;
+  final VoidCallback? onCreditSynced; // 서버 잔액 동기화 후 UI 갱신 (웰컴 보너스 등)
 
   const VoteButton({
     super.key,
@@ -28,6 +29,7 @@ class VoteButton extends StatefulWidget {
     this.votedIndex,
     required this.onVoteSuccess,
     required this.onVoteFailed,
+    this.onCreditSynced,
   });
 
   @override
@@ -198,13 +200,13 @@ class _VoteButtonState extends State<VoteButton>
     _animController.forward(from: 0);
     widget.onVoteSuccess();
 
-    // 크레딧 적립 시도
+    // 크레딧 적립 시도 (Optimistic +1)
     final creditEarned = await CreditManager.earnCredit();
 
     // API 호출
-    final success = await ApiService.vote(widget.shortsId, widget.button.index);
+    final result = await ApiService.vote(widget.shortsId, widget.button.index);
 
-    if (!success) {
+    if (!result.success) {
       // UC02 예외흐름 E3: API 실패 시 롤백
       widget.button.votes -= 1;
       if (creditEarned) {
@@ -212,10 +214,17 @@ class _VoteButtonState extends State<VoteButton>
       }
       if (mounted) setState(() => _justVoted = false);
       widget.onVoteFailed();
+      return;
+    }
+
+    // 서버가 잔액을 내려주면 즉시 동기화 (웰컴 보너스 10 크레딧 반영)
+    if (result.balance != null) {
+      await CreditManager.syncBalance(result.balance!);
+      widget.onCreditSynced?.call(); // 하단 게이지/배지 즉시 갱신
     }
 
     // UC02 예외흐름 E1: 크레딧 상한 도달 알림
-    if (!creditEarned && success && context.mounted) {
+    if (!creditEarned && result.balance == null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('크레딧이 꽉 찼습니다. 글을 작성해 보세요!'),

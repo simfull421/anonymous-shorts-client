@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
+import '../components/coach_mark_overlay.dart';
 import '../components/notice_banner.dart';
 import '../services/api_service.dart';
 import '../utils/block_manager.dart';
@@ -39,6 +40,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? '${NoticeManager.latest.date} · ${NoticeManager.latest.title}'
                 : '등록된 공지가 없습니다',
             onTap: _showNoticeList,
+          ),
+          _linkTile(
+            icon: Icons.help_outline,
+            title: '도움말',
+            subtitle: '사용법 안내 및 튜토리얼 다시 보기',
+            onTap: _showHelp,
           ),
           const Divider(color: Colors.white12, height: 32),
 
@@ -164,6 +171,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  /// 도움말 바텀시트 (사용법 + 튜토리얼 다시 보기)
+  void _showHelp() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('도움말',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              _helpRow(Icons.swipe_up_rounded, '위로 스와이프',
+                  '다음 쇼츠로 넘어갑니다. 쇼츠는 24시간 뒤 자동으로 사라져요.'),
+              _helpRow(Icons.how_to_vote_rounded, '감정 투표 = 크레딧 +1',
+                  '다른 쇼츠에 투표할 때마다 크레딧이 1개씩 쌓입니다. (최대 20개)'),
+              _helpRow(Icons.edit_rounded, '크레딧 10개로 글쓰기',
+                  '하단 가운데 연필 버튼이 크레딧이 쌓일수록 차오르고, 가득 차면 쇼츠를 작성할 수 있어요.'),
+              _helpRow(Icons.more_horiz, '신고 · 차단',
+                  '불쾌한 쇼츠는 카드 오른쪽 위 ⋯ 메뉴에서 신고하거나 작성자를 차단할 수 있어요.'),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // 시트 닫고 피드(루트)로 바로 이동 → 즉시 튜토리얼 표시
+                    Navigator.pop(sheetContext);
+                    CoachMarkOverlay.replayRequested.value = true;
+                    Navigator.popUntil(context, (route) => route.isFirst);
+                  },
+                  icon: const Icon(Icons.replay_rounded, size: 18),
+                  label: const Text('튜토리얼 다시 보기'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.secondaryAccent,
+                    side: BorderSide(
+                        color:
+                            AppTheme.secondaryAccent.withValues(alpha: 0.4)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _helpRow(IconData icon, String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.accentColor, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(desc,
+                    style: const TextStyle(
+                        color: Colors.white54, fontSize: 12.5, height: 1.5)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 공지사항 목록 바텀시트

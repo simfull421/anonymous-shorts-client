@@ -178,10 +178,12 @@ class ApiService {
 
   /// [API 4] 감정 투표 (POST /api/shorts/vote)
   /// 백엔드 DTO: VoteRequest(ShortsId, ButtonIndex, VoterUuid)
-  static Future<bool> vote(int shortsId, int buttonIndex) async {
+  /// 응답에 CreditBalance가 있으면 반환 (웰컴 보너스 즉시 반영용, 없으면 null)
+  static Future<({bool success, int? balance})> vote(
+      int shortsId, int buttonIndex) async {
     try {
       final uuid = await DeviceId.getOrCreate();
-      await _post<Map<String, dynamic>>(
+      final result = await _post<Map<String, dynamic>>(
         path: '/api/shorts/vote',
         body: {
           'ShortsId': shortsId,
@@ -190,9 +192,11 @@ class ApiService {
         },
         parser: (json) => json as Map<String, dynamic>,
       );
-      return true;
+      final balance =
+          (result['creditBalance'] ?? result['CreditBalance']) as int?;
+      return (success: true, balance: balance);
     } catch (_) {
-      return false;
+      return (success: false, balance: null);
     }
   }
 

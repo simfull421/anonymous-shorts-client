@@ -75,10 +75,15 @@ class _ConsentScreenState extends State<ConsentScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                '서비스 이용을 위해\n아래 약관에 동의해 주세요.',
+                '회원가입 없이 익명으로 바로 시작해요.\n이름, 이메일, 전화번호는 수집하지 않아요.',
                 style: AppTheme.bodyStyle.copyWith(
                   color: Colors.white70,
                 ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '시작하려면 아래 약관에 동의해 주세요.',
+                style: TextStyle(color: Colors.white38, fontSize: 13),
               ),
               const Spacer(flex: 3),
 
@@ -102,7 +107,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
 
               // 콘텐츠 책임 동의
               _buildConsentItemInline(
-                title: '[필수] 본인이 작성한 콘텐츠에 대한 모든 법적 책임은 본인에게 있음을 확인합니다.',
+                title: '[필수] 만 14세 이상이며, 내가 작성하는 콘텐츠에 대한 책임은 나에게 있음을 확인해요.',
                 checked: _responsibilityChecked,
                 onChanged: (v) => setState(() => _responsibilityChecked = v ?? false),
               ),

@@ -4,6 +4,8 @@
 // - 투표/신고 컴포넌트 연동
 // - flutter_animate 스와이프 애니메이션
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../app_theme.dart';
 import '../models/shorts_model.dart';
 import '../services/api_service.dart';
@@ -12,6 +14,7 @@ import '../utils/block_manager.dart';
 import '../components/shorts_card.dart';
 import '../components/write_shorts_form.dart';
 import '../components/notice_banner.dart';
+import '../components/coach_mark_overlay.dart';
 import '../utils/notice_manager.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -37,6 +40,15 @@ class _FeedScreenState extends State<FeedScreen> {
   // 📢 미확인 공지 배너 노출 여부
   bool _showNoticeBanner = false;
 
+  // ⬅️ 뒤로가기 2회 종료 패턴
+  DateTime? _lastBackPressed;
+
+  // 🎓 첫 실행 코치마크
+  bool _showCoachMark = false;
+
+  // 💫 투표 시 +1 플로팅 애니메이션 트리거 (증가할 때마다 재생)
+  int _plusOneTick = 0;
+
   late final PageController _pageController;
 
   @override
@@ -47,9 +59,25 @@ class _FeedScreenState extends State<FeedScreen> {
     BlockManager.init();
     _loadFeed();
     _checkNotice();
+    // 🔁 설정 > 도움말 > 튜토리얼 다시 보기 → 피드 복귀 시 즉시 표시
+    CoachMarkOverlay.replayRequested.addListener(_onCoachReplayRequested);
+  }
+
+  void _onCoachReplayRequested() {
+    if (CoachMarkOverlay.replayRequested.value && mounted) {
+      CoachMarkOverlay.replayRequested.value = false;
+      setState(() => _showCoachMark = true);
+    }
   }
 
   Future<void> _checkNotice() async {
+    // 🎓 코치마크가 우선 — 코치마크를 봐야 할 상태면 공지 배너는 다음 진입 시로 미룸
+    final needCoachMark = await CoachMarkOverlay.shouldShow();
+    if (needCoachMark) {
+      if (mounted) setState(() => _showCoachMark = true);
+      return;
+    }
+
     final hasUnseen = await NoticeManager.hasUnseenNotice();
     if (hasUnseen && mounted) {
       setState(() => _showNoticeBanner = true);
@@ -58,6 +86,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   void dispose() {
+    CoachMarkOverlay.replayRequested.removeListener(_onCoachReplayRequested);
     _pageController.removeListener(_onPageChanged);
     _pageController.dispose();
     super.dispose();
@@ -178,8 +207,44 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
+  /// ⬅️ 뒤로가기 처리: 2초 내 2회 누르면 앱 종료, 아니면 안내 스낵바
+  void _handleBackPress() {
+    final now = DateTime.now();
+    final isSecondPress = _lastBackPressed != null &&
+        now.difference(_lastBackPressed!) < const Duration(seconds: 2);
+
+    if (isSecondPress) {
+      SystemNavigator.pop(); // 앱 정상 종료
+      return;
+    }
+
+    _lastBackPressed = now;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('한 번 더 누르면 앱이 종료됩니다'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppTheme.cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(60, 0, 60, 20),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
         body: Center(
@@ -217,14 +282,11 @@ class _FeedScreenState extends State<FeedScreen> {
       bottomNavigationBar: _buildBottomBar(),
       body: Stack(
         children: [
-          NotificationListener<OverscrollNotification>(
-            onNotification: (notification) {
-              // B7: 첫 페이지에서 위로 과스크롤 시 새로고침
-              if (_pageController.page == 0 && notification.overscroll < -15 && !_isLoading) {
-                _loadFeed(forceRefresh: true);
-              }
-              return false;
-            },
+          // 당김 새로고침 (표준 인디케이터)
+          RefreshIndicator(
+            onRefresh: () => _loadFeed(forceRefresh: true),
+            color: AppTheme.accentColor,
+            backgroundColor: AppTheme.cardColor,
             child: PageView.builder(
               controller: _pageController,
               scrollDirection: Axis.vertical,
@@ -248,6 +310,41 @@ class _FeedScreenState extends State<FeedScreen> {
                 },
               ),
             ),
+          // 💫 투표 크레딧 +1 플로팅 (하단 중앙 글쓰기 버튼 위로 떠오름)
+          if (_plusOneTick > 0)
+            Positioned(
+              bottom: 12,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: Center(
+                  // 🔑 key를 Animate 위젯에 부여해야 투표할 때마다 재생되고,
+                  // 다른 위젯(공지 배너 등) 제거로 인한 리빌드에는 오재생되지 않음
+                  child: Text(
+                    '+1',
+                    style: const TextStyle(
+                      color: AppTheme.secondaryAccent,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                      .animate(key: ValueKey('plus_one_$_plusOneTick'))
+                      .slideY(begin: 0.5, end: -1.6, duration: 700.ms, curve: Curves.easeOutCubic)
+                      .fadeIn(duration: 150.ms)
+                      .then(delay: 250.ms)
+                      .fadeOut(duration: 300.ms),
+                ),
+              ),
+            ),
+          // 🎓 첫 실행 코치마크 (최상단)
+          if (_showCoachMark)
+            Positioned.fill(
+              child: CoachMarkOverlay(
+                onFinished: () {
+                  if (mounted) setState(() => _showCoachMark = false);
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -263,12 +360,17 @@ class _FeedScreenState extends State<FeedScreen> {
       onVoteSuccess: (buttonIndex) {
         setState(() {
           _votedShortsMap[short.id] = buttonIndex;
+          _plusOneTick++; // 💫 +1 플로팅 재생 (크레딧 게이지도 리빌드로 차오름)
         });
       },
       onVoteFailed: () {
         setState(() {
           _votedShortsMap.remove(short.id);
         });
+      },
+      onCreditSynced: () {
+        // 서버 잔액 동기화(웰컴 보너스 등) 후 게이지/배지 즉시 갱신
+        if (mounted) setState(() {});
       },
       onReported: () {
         setState(() {
@@ -358,13 +460,17 @@ class _FeedScreenState extends State<FeedScreen> {
     return BottomAppBar(
       color: AppTheme.backgroundColor,
       elevation: 0,
+      height: 72,
+      padding: EdgeInsets.zero,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // 홈 탭 (현재 활성)
-          IconButton(
-            icon: Icon(Icons.home, color: AppTheme.accentColor, size: 28),
-            onPressed: () {
+          // 홈 탭 (현재 활성) — 라벨 추가
+          _buildTabItem(
+            icon: Icons.home_rounded,
+            label: '홈',
+            color: AppTheme.accentColor,
+            onTap: () {
               // 이미 홈이므로 맨 위로 스크롤
               if (_pageController.hasClients) {
                 _pageController.animateToPage(
@@ -376,41 +482,152 @@ class _FeedScreenState extends State<FeedScreen> {
             },
           ),
 
-          // 중앙: 크레딧 & 글쓰기 버튼
-          GestureDetector(
-            onTap: _showWriteForm,
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: CreditManager.canWrite
-                    ? Colors.white
-                    : AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  '${CreditManager.balance}',
-                  style: TextStyle(
-                    color: CreditManager.canWrite
-                        ? Colors.black
-                        : Colors.white54,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // 중앙: 글쓰기 버튼 (물 차오르는 크레딧 게이지 + 연필 + 배지)
+          _buildWriteButton(),
 
-          // 마이페이지 탭
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.white54, size: 28),
-            onPressed: () async {
+          // 마이페이지 탭 — 라벨 추가
+          _buildTabItem(
+            icon: Icons.person_outline_rounded,
+            label: '마이',
+            color: Colors.white54,
+            onTap: () async {
               await Navigator.pushNamed(context, '/mypage');
               // 마이페이지에서 돌아올 때 크레딧 배지 갱신 (심사관 999 반영)
               if (mounted) setState(() {});
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ✍️ 글쓰기 버튼 — 크레딧이 쌓일수록 물이 차오르듯 게이지가 올라오고,
+  /// 10개(작성 가능)가 되면 가득 찬 상태로 글로우 효과
+  Widget _buildWriteButton() {
+    final double progress =
+        (CreditManager.balance / CreditManager.writeCost).clamp(0.0, 1.0);
+    final bool canWrite = CreditManager.canWrite;
+
+    return GestureDetector(
+      onTap: _showWriteForm,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: AppTheme.inputColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: canWrite
+                    ? AppTheme.accentColor.withValues(alpha: 0.8)
+                    : Colors.white.withValues(alpha: 0.1),
+                width: 1.5,
+              ),
+              boxShadow: canWrite
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.accentColor.withValues(alpha: 0.45),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 💧 물 차오름 게이지 (크레딧 진행도)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: progress),
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) => Container(
+                      height: 54 * value,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFFB07CF0), // 수면 쪽은 밝게 (물 표면 느낌)
+                            AppTheme.accentColor,
+                            Color(0xFF6C2BD9),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // 연필 아이콘
+                Icon(
+                  Icons.edit_rounded,
+                  color: canWrite
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.55),
+                  size: 26,
+                ),
+              ],
+            ),
+          ),
+          // 크레딧 배지 (잔액 변경 시 통통 튀는 펄스)
+          Positioned(
+            top: -6,
+            right: -8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: canWrite ? AppTheme.secondaryAccent : Colors.white24,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.backgroundColor, width: 2),
+              ),
+              child: Text(
+                '${CreditManager.balance}',
+                style: TextStyle(
+                  color: canWrite ? Colors.black : Colors.white70,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            )
+                .animate(key: ValueKey('badge_${CreditManager.balance}'))
+                .scale(
+                  begin: const Offset(1.35, 1.35),
+                  end: const Offset(1, 1),
+                  duration: 350.ms,
+                  curve: Curves.elasticOut,
+                ),
           ),
         ],
       ),
