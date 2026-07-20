@@ -4,7 +4,6 @@
 // - 크레딧 10 소모 (WRITE_CREDIT_COST)
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
 import '../services/api_service.dart';
 import '../utils/credit_manager.dart';
@@ -358,37 +357,13 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
             ),
             const SizedBox(height: 10),
 
-            // 커뮤니티 가이드라인 안내 (부드러운 톤 + 상세는 링크로)
-            Center(
-              child: GestureDetector(
-                onTap: () async {
-                  final uri = Uri.parse(
-                      'https://simfull421.github.io/anonymous-shorts-privacy/terms_of_service.html');
-                  try {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } catch (_) {}
-                },
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: '모든 쇼츠는 건강한 커뮤니티를 위해 가이드라인에 따라 검토돼요 · ',
-                        style: TextStyle(color: Colors.white38, fontSize: 11),
-                      ),
-                      TextSpan(
-                        text: '자세히',
-                        style: TextStyle(
-                          color: AppTheme.secondaryAccent.withValues(alpha: 0.8),
-                          fontSize: 11,
-                          decoration: TextDecoration.underline,
-                          decorationColor:
-                              AppTheme.secondaryAccent.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+            // 커뮤니티 가이드라인 안내 (탭 불가 플레인 텍스트)
+            // 링크는 더블탭 오클릭 문제로 제거 — 전문은 설정 > 서비스 이용약관에서 확인 가능
+            const Center(
+              child: Text(
+                '모든 쇼츠는 건강한 커뮤니티를 위해 가이드라인에 따라 검토돼요',
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 16),

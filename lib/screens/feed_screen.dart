@@ -115,6 +115,9 @@ class _FeedScreenState extends State<FeedScreen> {
         setState(() {
           _isLoading = true;
           _errorMessage = null;
+          // 💫 리로드 시 +1 위젯 제거 — 로딩 화면을 거치며 Stack이 재구성될 때
+          // 이미 재생됐던 +1 애니메이션이 다시 재생되는 것 방지
+          _plusOneTick = 0;
         });
       }
 

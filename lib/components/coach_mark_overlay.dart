@@ -158,7 +158,10 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
               .animate(onPlay: (c) => c.repeat(reverse: true))
               .slideY(begin: 0.15, end: -0.15, duration: 800.ms, curve: Curves.easeInOut),
         ),
-        Column(
+        // Positioned.fill로 감싸야 Stack 안에서 정중앙 정렬됨
+        // (Stack의 기본 정렬이 topStart라 Column이 좌상단으로 밀리는 문제 수정)
+        Positioned.fill(
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.shield_outlined,
@@ -187,6 +190,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
             const SizedBox(height: 40),
             _tapHint('화면을 탭해서 시작하기'),
           ],
+          ),
         ),
       ],
     ).animate().fadeIn(duration: 350.ms);
