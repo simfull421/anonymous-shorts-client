@@ -19,18 +19,6 @@ class ApiService {
   // HMAC 시크릿 키 (반드시 --dart-define=HMAC_SECRET=... 로 빌드 시 주입)
   static const String _hmacSecret = String.fromEnvironment('HMAC_SECRET');
 
-  // 🔧 DEBUG: 앱 시작 시 dart-define 값 확인 (출시 전 제거)
-  static void debugPrintConfig() {
-    print('========== [DEBUG] dart-define 확인 ==========');
-    print('  API_URL: $baseUrl');
-    print('  HMAC_SECRET 길이: ${_hmacSecret.length}');
-    print('  HMAC_SECRET 비어있음: ${_hmacSecret.isEmpty}');
-    if (_hmacSecret.isNotEmpty) {
-      print('  HMAC_SECRET 앞5자: ${_hmacSecret.substring(0, _hmacSecret.length > 5 ? 5 : _hmacSecret.length)}...');
-    }
-    print('=============================================');
-  }
-
   /// 기기 로케일 자동 감지 (i18n 기초)
   static String get deviceLanguage {
     final locale = ui.PlatformDispatcher.instance.locale;

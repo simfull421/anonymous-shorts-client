@@ -6,7 +6,6 @@ import 'screens/feed_screen.dart';
 import 'screens/my_page_screen.dart';
 import 'screens/consent_screen.dart';
 import 'screens/settings_screen.dart';
-import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,9 +16,6 @@ void main() async {
   };
 
   runZonedGuarded(() async {
-    // 🔧 DEBUG: dart-define 값 확인 (출시 전 제거)
-    ApiService.debugPrintConfig();
-
     final prefs = await SharedPreferences.getInstance();
     final consentAccepted = prefs.getBool('consent_accepted') ?? false;
     runApp(MyApp(consentAccepted: consentAccepted));

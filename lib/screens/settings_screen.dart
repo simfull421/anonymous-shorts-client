@@ -6,10 +6,12 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
+import '../components/notice_banner.dart';
 import '../services/api_service.dart';
 import '../utils/block_manager.dart';
 import '../utils/credit_manager.dart';
 import '../utils/device_id.dart';
+import '../utils/notice_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -28,6 +30,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          // 섹션: 공지사항
+          _sectionHeader('공지사항'),
+          _linkTile(
+            icon: Icons.campaign_outlined,
+            title: '공지사항',
+            subtitle: NoticeManager.notices.isNotEmpty
+                ? '${NoticeManager.latest.date} · ${NoticeManager.latest.title}'
+                : '등록된 공지가 없습니다',
+            onTap: _showNoticeList,
+          ),
+          const Divider(color: Colors.white12, height: 32),
+
           // 섹션: 법적 문서
           _sectionHeader('법적 문서'),
           _linkTile(
@@ -150,6 +164,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  /// 공지사항 목록 바텀시트
+  void _showNoticeList() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('공지사항',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              if (NoticeManager.notices.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text('등록된 공지가 없습니다.',
+                        style: TextStyle(color: Colors.white38)),
+                  ),
+                )
+              else
+                ...NoticeManager.notices.map(
+                  (notice) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.campaign_outlined,
+                        color: AppTheme.accentColor, size: 22),
+                    title: Text(notice.title,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 14.5)),
+                    subtitle: Text(notice.date,
+                        style: const TextStyle(
+                            color: Colors.white38, fontSize: 12)),
+                    trailing: const Icon(Icons.chevron_right,
+                        color: Colors.white24),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      showNoticeDetailSheet(context, notice,
+                          onConfirmed: NoticeManager.markLatestSeen);
+                    },
+                  ),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showBlockedUsers() {

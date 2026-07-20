@@ -171,9 +171,16 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
 
   @override
   Widget build(BuildContext context) {
+    // 안드로이드 시스템 내비게이션 바(제스처/버튼 바)에 하단 버튼이 가려지는 문제 수정:
+    // 키보드 인셋(viewInsets) + 시스템 바 인셋(viewPadding) 중 큰 값을 하단 여백으로 적용
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+    final systemBarInset = MediaQuery.of(context).viewPadding.bottom;
+    final bottomInset =
+        keyboardInset > systemBarInset ? keyboardInset : systemBarInset;
+
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: bottomInset,
         left: 20,
         right: 20,
         top: 20,

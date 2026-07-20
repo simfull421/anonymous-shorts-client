@@ -45,6 +45,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # 런처 아이콘 자동 생성 (dart run flutter_launcher_icons)
+  flutter_launcher_icons: ^0.14.3
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -54,6 +57,18 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+# 런처 아이콘 설정 — 사용법:
+# 1) Logo.png를 assets/icon/logo.png 로 복사
+# 2) flutter pub get
+# 3) dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/Logo.png"
+  # 안드로이드 적응형 아이콘 (배경색은 앱 다크 테마와 통일)
+  adaptive_icon_background: "#090616"
+  adaptive_icon_foreground: "assets/icon/Logo.png"
 
 # The following section is specific to Flutter packages.
 flutter:

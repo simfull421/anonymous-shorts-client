@@ -11,6 +11,8 @@ import '../utils/credit_manager.dart';
 import '../utils/block_manager.dart';
 import '../components/shorts_card.dart';
 import '../components/write_shorts_form.dart';
+import '../components/notice_banner.dart';
+import '../utils/notice_manager.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -32,6 +34,9 @@ class _FeedScreenState extends State<FeedScreen> {
   // 신고로 은폐된 쇼츠 ID 집합
   final Set<int> _reportedShortsIds = {};
 
+  // 📢 미확인 공지 배너 노출 여부
+  bool _showNoticeBanner = false;
+
   late final PageController _pageController;
 
   @override
@@ -41,6 +46,14 @@ class _FeedScreenState extends State<FeedScreen> {
     _pageController.addListener(_onPageChanged);
     BlockManager.init();
     _loadFeed();
+    _checkNotice();
+  }
+
+  Future<void> _checkNotice() async {
+    final hasUnseen = await NoticeManager.hasUnseenNotice();
+    if (hasUnseen && mounted) {
+      setState(() => _showNoticeBanner = true);
+    }
   }
 
   @override
@@ -202,23 +215,40 @@ class _FeedScreenState extends State<FeedScreen> {
 
     return Scaffold(
       bottomNavigationBar: _buildBottomBar(),
-      body: NotificationListener<OverscrollNotification>(
-        onNotification: (notification) {
-          // B7: 첫 페이지에서 위로 과스크롤 시 새로고침
-          if (_pageController.page == 0 && notification.overscroll < -15 && !_isLoading) {
-            _loadFeed(forceRefresh: true);
-          }
-          return false;
-        },
-        child: PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: visibleShorts.length,
-          itemBuilder: (context, index) {
-            final short = visibleShorts[index];
-            return _buildShortsCard(short, index);
-          },
-        ),
+      body: Stack(
+        children: [
+          NotificationListener<OverscrollNotification>(
+            onNotification: (notification) {
+              // B7: 첫 페이지에서 위로 과스크롤 시 새로고침
+              if (_pageController.page == 0 && notification.overscroll < -15 && !_isLoading) {
+                _loadFeed(forceRefresh: true);
+              }
+              return false;
+            },
+            child: PageView.builder(
+              controller: _pageController,
+              scrollDirection: Axis.vertical,
+              itemCount: visibleShorts.length,
+              itemBuilder: (context, index) {
+                final short = visibleShorts[index];
+                return _buildShortsCard(short, index);
+              },
+            ),
+          ),
+          // 📢 미확인 공지 배너 (상단 슬라이드 다운)
+          if (_showNoticeBanner)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: NoticeBanner(
+                notice: NoticeManager.latest,
+                onDismissed: () {
+                  if (mounted) setState(() => _showNoticeBanner = false);
+                },
+              ),
+            ),
+        ],
       ),
     );
   }
