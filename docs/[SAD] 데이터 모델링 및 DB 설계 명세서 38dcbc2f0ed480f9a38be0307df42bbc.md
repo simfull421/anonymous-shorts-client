@@ -160,7 +160,7 @@ INSERT INTO `SystemConfig` (`config_key`, `config_value`, `config_string`, `desc
 ('BLIND_REPORT_THRESHOLD', 10, NULL, '자동 블라인드 누적 신고 임계치'),
 ('HOURLY_REPORT_LIMIT', 5, NULL, '유저별 1시간 내 최대 신고 가능 횟수'),
 ('WRITE_CREDIT_COST', 10, NULL, '쇼츠 작성 시 소모되는 크레딧'),
-('REVIEWER_SECRET_CODE', NULL, 'AppleReview2026!', '스토어 심사관 샌드박스 진입용 시크릿 코드');
+('REVIEWER_SECRET_CODE', NULL, '<운영자 별도 보관 — 문서에 기재하지 않음>', '스토어 심사관 샌드박스 진입용 시크릿 코드');
 
 -- 2. 블랙리스트 기기 테이블
 CREATE TABLE `Blacklist` (
