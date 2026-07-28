@@ -73,15 +73,6 @@ class _ConsentScreenState extends State<ConsentScreen> {
                 '익명쇼츠',
                 style: AppTheme.mainContentStyle.copyWith(fontSize: 40),
               ),
-              const SizedBox(height: 6),
-              Text(
-                '24시간 뒤 사라지는 익명 한 줄',
-                style: TextStyle(
-                  color: AppTheme.secondaryAccent.withValues(alpha: 0.75),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
               const SizedBox(height: 12),
               Text(
                 '회원가입 없이 익명으로 바로 시작해요.\n이름, 이메일, 전화번호는 수집하지 않아요.',

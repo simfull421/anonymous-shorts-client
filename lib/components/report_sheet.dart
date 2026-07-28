@@ -91,12 +91,12 @@ class _ReportSheet extends StatelessWidget {
             const SizedBox(height: 14),
 
             // ── 트랙 B: 권리침해 (1건 즉시 처리) ──
-            _sectionLabel('내 권리를 침해합니다'),
+            // 3개 항목이 모두 같은 처리 경로이므로 안내 문구는 섹션 라벨에 한 번만 표기
+            _sectionLabel('내 권리를 침해합니다', note: '운영자가 직접 확인해요'),
             _reasonTile(
               context,
               icon: Icons.gavel_outlined,
               title: '명예훼손',
-              subtitle: '운영자가 직접 확인해요',
               highlight: true,
               onTap: () => _submitUrgentReport(context, '명예훼손'),
             ),
@@ -104,7 +104,6 @@ class _ReportSheet extends StatelessWidget {
               context,
               icon: Icons.person_off_outlined,
               title: '사생활 침해 · 개인정보 노출',
-              subtitle: '운영자가 직접 확인해요',
               highlight: true,
               onTap: () => _submitUrgentReport(context, '사생활 침해·개인정보 노출'),
             ),
@@ -112,7 +111,6 @@ class _ReportSheet extends StatelessWidget {
               context,
               icon: Icons.copyright_outlined,
               title: '저작권 등 권리 침해',
-              subtitle: '운영자가 직접 확인해요',
               highlight: true,
               onTap: () => _submitUrgentReport(context, '저작권 등 권리 침해'),
             ),
@@ -130,13 +128,25 @@ class _ReportSheet extends StatelessWidget {
     );
   }
 
-  Widget _sectionLabel(String text) {
+  Widget _sectionLabel(String text, {String? note}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6, left: 2),
-      child: Text(
-        text,
-        style: const TextStyle(
-            color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w600),
+      child: Row(
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+                color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+          if (note != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              note,
+              style: const TextStyle(
+                  color: AppTheme.secondaryAccent, fontSize: 11),
+            ),
+          ],
+        ],
       ),
     );
   }

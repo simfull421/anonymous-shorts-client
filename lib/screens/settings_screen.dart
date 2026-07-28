@@ -39,7 +39,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
-      body: ListView(
+      // 하단 시스템 내비게이션 바에 마지막 항목이 가려지지 않도록 SafeArea 적용
+      body: SafeArea(
+        top: false,
+        child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           // ── 상단: 친근한 항목 먼저 ──
@@ -130,6 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
         ],
+      ),
       ),
     );
   }
