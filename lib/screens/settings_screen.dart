@@ -229,6 +229,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: isLoading
                   ? null
                   : () async {
+                      // 비동기 호출 전에 messenger·navigator를 미리 확보한다.
+                      // (await 이후 BuildContext를 다시 참조하지 않기 위함)
+                      final messenger = ScaffoldMessenger.of(context);
+                      final navigator = Navigator.of(dialogContext);
+
                       setDialogState(() {
                         isLoading = true;
                         errorText = null;
@@ -238,33 +243,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       if (result.token != null) {
                         secretController.dispose();
-                        if (!context.mounted) return;
-                        Navigator.pop(dialogContext);
+                        navigator.pop();
                         await CreditManager.enterAdminMode();
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setString('audit_token', result.token!);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('✅ 심사관 모드가 활성화되었습니다. (크레딧 999)'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        }
+                        if (!mounted) return;
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('✅ 심사관 모드가 활성화되었습니다. (크레딧 999)'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
                       } else if (result.error != null &&
                           result.error!.contains('15분')) {
                         secretController.dispose();
-                        if (!context.mounted) return;
-                        Navigator.pop(dialogContext);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result.error!),
-                              backgroundColor: const Color(0xFFFF1744),
-                              duration: const Duration(seconds: 4),
-                            ),
-                          );
-                        }
+                        navigator.pop();
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(result.error!),
+                            backgroundColor: const Color(0xFFFF1744),
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
                       } else {
                         setDialogState(() {
                           isLoading = false;
