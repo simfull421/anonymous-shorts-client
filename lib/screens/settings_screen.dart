@@ -561,7 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (data != null && mounted) {
         final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
         await SharePlus.instance.share(
-          ShareParams(text: jsonStr, subject: 'Anonymous Shorts - 내 데이터'),
+          ShareParams(text: jsonStr, subject: '익명쇼츠 - 내 데이터'),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

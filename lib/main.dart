@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Anonymous Shorts',
+      title: '익명쇼츠',
       theme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
       initialRoute: consentAccepted ? '/' : '/consent',

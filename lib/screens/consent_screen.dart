@@ -70,8 +70,17 @@ class _ConsentScreenState extends State<ConsentScreen> {
               const Spacer(flex: 2),
               // 앱 타이틀
               Text(
-                'Anonymous\nShorts',
-                style: AppTheme.mainContentStyle.copyWith(fontSize: 36),
+                '익명쇼츠',
+                style: AppTheme.mainContentStyle.copyWith(fontSize: 40),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '24시간 뒤 사라지는 익명 한 줄',
+                style: TextStyle(
+                  color: AppTheme.secondaryAccent.withValues(alpha: 0.75),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
