@@ -202,7 +202,8 @@ class ApiService {
 
   /// [API 5] 쇼츠 작성 (POST /api/shorts)
   /// 백엔드 DTO: ShortRequest(CreatorUuid, LanguageCode, TextContent, CustomButtons, BgmId)
-  static Future<({bool success, String? error})> createShorts({
+  /// 반환 code: 서버가 내려준 사유 코드 (예: SELF_HARM_DETECTED)
+  static Future<({bool success, String? error, String? code})> createShorts({
     required String textContent,
     required String customButtonsJson,
     String languageCode = 'ko',
@@ -231,20 +232,24 @@ class ApiService {
         parser: (json) => json as Map<String, dynamic>,
         extraHeaders: extraHeaders.isNotEmpty ? extraHeaders : null,
       );
-      return (success: true, error: null);
+      return (success: true, error: null, code: null);
     } on ApiException catch (e) {
-      // 서버 에러 응답에서 Message 추출 ({"message":"..."} 또는 {"Message":"..."})
+      // 서버 에러 응답에서 Message/Code 추출
+      // ({"message":"...","code":"..."} 또는 {"Message":"...","Code":"..."})
       String errorMsg = '등록에 실패했습니다. 다시 시도해 주세요.';
+      String? code;
       try {
         final parsed = jsonDecode(e.body);
         if (parsed is Map) {
           final msg = parsed['Message'] ?? parsed['message'];
           if (msg is String) errorMsg = msg;
+          final c = parsed['Code'] ?? parsed['code'];
+          if (c is String) code = c;
         }
       } catch (_) {}
-      return (success: false, error: errorMsg);
+      return (success: false, error: errorMsg, code: code);
     } catch (_) {
-      return (success: false, error: '네트워크 오류가 발생했습니다.');
+      return (success: false, error: '네트워크 오류가 발생했습니다.', code: null);
     }
   }
 

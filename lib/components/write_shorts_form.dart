@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../services/api_service.dart';
 import '../utils/credit_manager.dart';
+import 'safety_dialog.dart';
 
 class WriteShortsForm extends StatefulWidget {
   final VoidCallback? onSuccess; // 작성 성공 후 피드 새로고침 콜백
@@ -160,6 +161,14 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
           await CreditManager.syncBalance(CreditManager.balance + CreditManager.writeCost);
         }
         if (!mounted) return;
+
+        // 🫂 자해·자살 관련 내용 감지: 오류 문구 대신 상담 안내를 노출
+        if (result.code == kSelfHarmCode) {
+          setState(() => _isSubmitting = false);
+          showSafetyDialog(context);
+          return;
+        }
+
         setState(() {
           _isSubmitting = false;
           _submitError = result.error ?? '등록에 실패했습니다. 다시 시도해 주세요.';

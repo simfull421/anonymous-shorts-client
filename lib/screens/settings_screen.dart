@@ -8,10 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../components/coach_mark_overlay.dart';
 import '../components/notice_banner.dart';
+import '../components/report_sheet.dart';
 import '../services/api_service.dart';
 import '../utils/block_manager.dart';
 import '../utils/credit_manager.dart';
 import '../utils/device_id.dart';
+import '../utils/hidden_judge.dart';
 import '../utils/notice_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -24,6 +26,15 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isExporting = false;
 
+  /// 🕵️ 심사관 모드 진입점 (UC09) — 하단 버전 표시를 1.5초 내 5회 탭
+  late final HiddenJudge _hiddenJudge;
+
+  @override
+  void initState() {
+    super.initState();
+    _hiddenJudge = HiddenJudge(onActivated: _showJudgeLoginModal);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,88 +42,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          // 섹션: 공지사항
-          _sectionHeader('공지사항'),
+          // ── 상단: 친근한 항목 먼저 ──
+          _linkTile(
+            icon: Icons.help_outline,
+            title: '도움말',
+            subtitle: '사용법이 궁금하다면',
+            onTap: _showHelp,
+          ),
           _linkTile(
             icon: Icons.campaign_outlined,
             title: '공지사항',
             subtitle: NoticeManager.notices.isNotEmpty
-                ? '${NoticeManager.latest.date} · ${NoticeManager.latest.title}'
-                : '등록된 공지가 없습니다',
+                ? NoticeManager.latest.title
+                : '등록된 공지가 없어요',
             onTap: _showNoticeList,
           ),
-          _linkTile(
-            icon: Icons.help_outline,
-            title: '도움말',
-            subtitle: '사용법 안내 및 튜토리얼 다시 보기',
-            onTap: _showHelp,
-          ),
           const Divider(color: Colors.white12, height: 32),
 
-          // 섹션: 법적 문서
-          _sectionHeader('법적 문서'),
+          // ── 내 정보 ──
+          _sectionHeader('내 정보'),
           _linkTile(
-            icon: Icons.privacy_tip_outlined,
-            title: '개인정보처리방침',
-            onTap: () => _openUrl('https://simfull421.github.io/anonymous-shorts-privacy/privacy_policy.html'),
-          ),
-          _linkTile(
-            icon: Icons.description_outlined,
-            title: '서비스 이용약관',
-            onTap: () => _openUrl('https://simfull421.github.io/anonymous-shorts-privacy/terms_of_service.html'),
-          ),
-          _linkTile(
-            icon: Icons.article_outlined,
-            title: '오픈소스 라이선스',
-            onTap: () => showLicensePage(
-              context: context,
-              applicationName: 'Anonymous Shorts',
-              applicationVersion: 'v1.0.0',
-            ),
-          ),
-          const Divider(color: Colors.white12, height: 32),
-
-          // 섹션: 유저 관리
-          _sectionHeader('유저 관리'),
-          _linkTile(
-            icon: Icons.block,
-            title: '차단 유저 관리',
-            subtitle: '${BlockManager.count}명 차단 중',
+            icon: Icons.person_off_outlined,
+            title: '차단한 유저',
+            subtitle: BlockManager.count > 0
+                ? '${BlockManager.count}명'
+                : '차단한 유저가 없어요',
             onTap: () => _showBlockedUsers(),
           ),
-          const Divider(color: Colors.white12, height: 32),
-
-          // 섹션: 데이터
-          _sectionHeader('내 데이터'),
           ListTile(
             leading: Icon(
               _isExporting ? Icons.hourglass_top : Icons.download_outlined,
               color: Colors.white54,
             ),
-            title: const Text('내 데이터 다운로드', style: TextStyle(color: Colors.white)),
-            subtitle: const Text('GDPR/PIPA 데이터 열람권', style: TextStyle(color: Colors.white38, fontSize: 12)),
+            title: const Text('내 데이터 받기', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('내가 쓴 글과 활동 기록',
+                style: TextStyle(color: Colors.white38, fontSize: 12)),
             trailing: _isExporting
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54))
                 : const Icon(Icons.chevron_right, color: Colors.white24),
             onTap: _isExporting ? null : _exportData,
           ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: Color(0xFFFF6B81)),
+            title: const Text('데이터 삭제', style: TextStyle(color: Color(0xFFFF6B81))),
+            subtitle: const Text('모든 기록이 영구적으로 지워져요',
+                style: TextStyle(color: Colors.white38, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+            onTap: _showDataDeletionConfirm,
+          ),
           const Divider(color: Colors.white12, height: 32),
 
-          // 섹션: 위험 영역
-          _sectionHeader('계정'),
-          ListTile(
-            leading: const Icon(Icons.delete_forever, color: Color(0xFFFF1744)),
-            title: const Text('계정 데이터 삭제', style: TextStyle(color: Color(0xFFFF1744))),
-            subtitle: const Text('모든 데이터가 영구 삭제됩니다', style: TextStyle(color: Colors.white38, fontSize: 12)),
-            onTap: _showDataDeletionConfirm,
+          // ── 기타 (법적 문서는 한 단계 안으로) ──
+          _sectionHeader('기타'),
+          _linkTile(
+            icon: Icons.shield_outlined,
+            title: '약관 및 정책',
+            subtitle: '개인정보처리방침 · 이용약관',
+            onTap: _showPolicySheet,
+          ),
+          _linkTile(
+            icon: Icons.gavel_outlined,
+            title: '권리침해 신고',
+            subtitle: '이미 사라진 글도 신고할 수 있어요',
+            onTap: () => launchExpiredContentReport(context),
           ),
           const SizedBox(height: 32),
 
-          // 앱 정보
+          // 앱 정보 (심사관 모드 진입점: 1.5초 내 5회 탭)
           Center(
-            child: Text(
-              'Anonymous Shorts v1.0.0',
-              style: TextStyle(color: Colors.white24, fontSize: 12),
+            child: GestureDetector(
+              onTap: _hiddenJudge.onTap,
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 6),
+                child: Text(
+                  '익명쇼츠 v1.1.0',
+                  style: TextStyle(color: Colors.white24, fontSize: 12),
+                ),
+              ),
             ),
           ),
           Center(
@@ -171,6 +178,183 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  /// UC09: 심사관 로그인 모달 (버전 표시 5회 탭으로 진입)
+  void _showJudgeLoginModal() {
+    final secretController = TextEditingController();
+    bool isLoading = false;
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.surfaceColor,
+          title: const Text('🔐 심사관 인증',
+              style: TextStyle(color: Colors.white, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '스토어 심사관 전용 접근입니다.\n발급받은 시크릿 코드를 입력하세요.',
+                style: TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: secretController,
+                obscureText: true,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Secret Code',
+                  errorText: errorText,
+                  errorStyle: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                secretController.dispose();
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('취소', style: TextStyle(color: Colors.white54)),
+            ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      setDialogState(() {
+                        isLoading = true;
+                        errorText = null;
+                      });
+                      final result =
+                          await ApiService.adminLogin(secretController.text);
+
+                      if (result.token != null) {
+                        secretController.dispose();
+                        if (!context.mounted) return;
+                        Navigator.pop(dialogContext);
+                        await CreditManager.enterAdminMode();
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('audit_token', result.token!);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('✅ 심사관 모드가 활성화되었습니다. (크레딧 999)'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      } else if (result.error != null &&
+                          result.error!.contains('15분')) {
+                        secretController.dispose();
+                        if (!context.mounted) return;
+                        Navigator.pop(dialogContext);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result.error!),
+                              backgroundColor: const Color(0xFFFF1744),
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      } else {
+                        setDialogState(() {
+                          isLoading = false;
+                          errorText = result.error ?? '인증에 실패했습니다.';
+                        });
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Text('로그인', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 약관 및 정책 바텀시트 (법적 문서 모음)
+  void _showPolicySheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('약관 및 정책',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              _policyTile(
+                icon: Icons.privacy_tip_outlined,
+                title: '개인정보처리방침',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _openUrl(
+                      'https://simfull421.github.io/anonymous-shorts-privacy/privacy_policy.html');
+                },
+              ),
+              _policyTile(
+                icon: Icons.description_outlined,
+                title: '서비스 이용약관',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _openUrl(
+                      'https://simfull421.github.io/anonymous-shorts-privacy/terms_of_service.html');
+                },
+              ),
+              _policyTile(
+                icon: Icons.article_outlined,
+                title: '오픈소스 라이선스',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  showLicensePage(
+                    context: context,
+                    applicationName: '익명쇼츠',
+                    applicationVersion: 'v1.1.0',
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _policyTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: Colors.white54, size: 21),
+      title: Text(title,
+          style: const TextStyle(color: Colors.white, fontSize: 14.5)),
+      trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
+      onTap: onTap,
+    );
   }
 
   /// 도움말 바텀시트 (사용법 + 튜토리얼 다시 보기)
@@ -331,13 +515,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
+        builder: (context, setSheetState) => SafeArea(
+          top: false,
+          child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('차단 유저 관리', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('차단한 유저', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               if (blocked.isEmpty)
                 const Padding(
@@ -361,6 +547,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     )),
               const SizedBox(height: 16),
             ],
+          ),
           ),
         ),
       ),

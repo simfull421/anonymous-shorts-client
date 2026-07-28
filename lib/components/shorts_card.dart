@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
 import '../models/shorts_model.dart';
 import 'vote_button.dart';
-import 'report_button.dart';
+import 'report_sheet.dart';
 
 class ShortsCard extends StatelessWidget {
   final ShortsModel short;
@@ -69,7 +69,12 @@ class ShortsCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14)),
                     onSelected: (value) {
                       if (value == 'report') {
-                        ReportGuard.report(context, short.id, onReported);
+                        // 2트랙 신고 시트 (규칙 위반 / 권리침해 분리)
+                        showReportSheet(
+                          context,
+                          short: short,
+                          onReported: onReported,
+                        );
                       } else if (value == 'block') {
                         onBlockUser();
                       }

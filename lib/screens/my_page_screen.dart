@@ -2,14 +2,12 @@
 // - 내가 작성한 쇼츠 리스트 (GET /api/shorts/my?uuid=xxx)
 // - 상태별 UI 분기: Active(정상), Expired(회색), Blind(블라인드 문구)
 // - Empty State: 작성 이력 없음 안내
-// - 앱 버전 5회 탭 → 심사관 모드 (UC09)
+// - 심사관 모드(UC09) 진입점은 설정 화면 하단 버전 표시로 이동
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../models/shorts_model.dart';
 import '../services/api_service.dart';
 import '../utils/credit_manager.dart';
-import '../utils/hidden_judge.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -23,12 +21,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
-  late final HiddenJudge _hiddenJudge;
-
   @override
   void initState() {
     super.initState();
-    _hiddenJudge = HiddenJudge(onActivated: _showJudgeLoginModal);
     _loadMyShorts();
   }
 
@@ -56,110 +51,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
         });
       }
     }
-  }
-
-  /// UC09: 심사관 로그인 모달
-  void _showJudgeLoginModal() {
-    final secretController = TextEditingController();
-    bool isLoading = false;
-    String? errorText;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.surfaceColor,
-          title: const Text(
-            '🔐 심사관 인증',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '스토어 심사관 전용 접근입니다.\n발급받은 시크릿 코드를 입력하세요.',
-                style: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: secretController,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Secret Code',
-                  errorText: errorText,
-                  errorStyle: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                secretController.dispose();
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('취소', style: TextStyle(color: Colors.white54)),
-            ),
-            TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      setDialogState(() {
-                        isLoading = true;
-                        errorText = null;
-                      });
-                      final result = await ApiService.adminLogin(secretController.text);
-
-                      if (result.token != null) {
-                        // 성공: 다이얼로그 닫기 + 심사관 모드 활성화
-                        secretController.dispose();
-                        if (!context.mounted) return;
-                        Navigator.pop(dialogContext);
-                        await CreditManager.enterAdminMode();
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setString('audit_token', result.token!);
-                        _loadMyShorts();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('✅ 심사관 모드가 활성화되었습니다. (크레딧 999)'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      } else if (result.error != null && result.error!.contains('15분')) {
-                        // 429 브루트포스 잠금: 다이얼로그 닫고 잠금 안내
-                        secretController.dispose();
-                        if (!context.mounted) return;
-                        Navigator.pop(dialogContext);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result.error!),
-                              backgroundColor: const Color(0xFFFF1744),
-                              duration: const Duration(seconds: 4),
-                            ),
-                          );
-                        }
-                      } else {
-                        // 일반 실패: 다이얼로그 유지, 에러 표시
-                        setDialogState(() {
-                          isLoading = false;
-                          errorText = result.error ?? '인증에 실패했습니다.';
-                        });
-                      }
-                    },
-              child: isLoading
-                  ? const SizedBox(
-                      width: 16, height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('로그인', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// UC05 E3: 내 쇼츠 삭제
@@ -211,20 +102,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
             icon: const Icon(Icons.settings_outlined, color: Colors.white54, size: 22),
             onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
-          // 앱 버전 표시 + 5회 탭 심사관 모드 (UC09)
-          GestureDetector(
-            onTap: _hiddenJudge.onTap,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text(
-                'v1.0.0',
-                style: TextStyle(
-                  color: Colors.white24,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
+          // (심사관 모드 진입점은 설정 화면 하단 버전 표시로 이동)
         ],
       ),
       body: _buildBody(),
