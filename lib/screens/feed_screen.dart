@@ -78,6 +78,9 @@ class _FeedScreenState extends State<FeedScreen> {
       return;
     }
 
+    // 원격 공지 목록 로드 (실패해도 캐시/기본값으로 동작)
+    await NoticeManager.load();
+
     final hasUnseen = await NoticeManager.hasUnseenNotice();
     if (hasUnseen && mounted) {
       setState(() => _showNoticeBanner = true);

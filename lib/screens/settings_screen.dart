@@ -185,105 +185,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   /// UC09: 심사관 로그인 모달 (버전 표시 5회 탭으로 진입)
-  void _showJudgeLoginModal() {
-    final secretController = TextEditingController();
-    bool isLoading = false;
-    String? errorText;
-
-    showDialog(
+  /// 다이얼로그 본체는 _ReviewerLoginDialog가 담당하고,
+  /// 여기서는 결과를 받아 스낵바만 띄운다.
+  Future<void> _showJudgeLoginModal() async {
+    final outcome = await showDialog<_ReviewerLoginResult>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.surfaceColor,
-          title: const Text('🔐 심사관 인증',
-              style: TextStyle(color: Colors.white, fontSize: 16)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '스토어 심사관 전용 접근입니다.\n발급받은 시크릿 코드를 입력하세요.',
-                style: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: secretController,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Secret Code',
-                  errorText: errorText,
-                  errorStyle: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                secretController.dispose();
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('취소', style: TextStyle(color: Colors.white54)),
-            ),
-            TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      // 비동기 호출 전에 messenger·navigator를 미리 확보한다.
-                      // (await 이후 BuildContext를 다시 참조하지 않기 위함)
-                      final messenger = ScaffoldMessenger.of(context);
-                      final navigator = Navigator.of(dialogContext);
-
-                      setDialogState(() {
-                        isLoading = true;
-                        errorText = null;
-                      });
-                      final result =
-                          await ApiService.adminLogin(secretController.text);
-
-                      if (result.token != null) {
-                        secretController.dispose();
-                        navigator.pop();
-                        await CreditManager.enterAdminMode();
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setString('audit_token', result.token!);
-                        if (!mounted) return;
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text('✅ 심사관 모드가 활성화되었습니다. (크레딧 999)'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      } else if (result.error != null &&
-                          result.error!.contains('15분')) {
-                        secretController.dispose();
-                        navigator.pop();
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(result.error!),
-                            backgroundColor: const Color(0xFFFF1744),
-                            duration: const Duration(seconds: 4),
-                          ),
-                        );
-                      } else {
-                        setDialogState(() {
-                          isLoading = false;
-                          errorText = result.error ?? '인증에 실패했습니다.';
-                        });
-                      }
-                    },
-              child: isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Text('로그인', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => const _ReviewerLoginDialog(),
     );
+
+    if (!mounted || outcome == null) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    if (outcome.success) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('✅ 심사관 모드가 활성화되었습니다. (크레딧 999)'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else if (outcome.lockedMessage != null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(outcome.lockedMessage!),
+          backgroundColor: const Color(0xFFFF1744),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   /// 약관 및 정책 바텀시트 (법적 문서 모음)
@@ -622,6 +550,114 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 심사관 로그인 결과 (다이얼로그 → 호출자 전달용)
+class _ReviewerLoginResult {
+  final bool success;
+  final String? lockedMessage; // 브루트포스 잠금 안내 (있으면 표시)
+  const _ReviewerLoginResult({this.success = false, this.lockedMessage});
+}
+
+/// 🔐 심사관 인증 다이얼로그 (UC09)
+/// TextEditingController를 이 위젯이 소유하고 State.dispose()에서 정리한다.
+/// (외부에서 수동 dispose하면 위젯이 아직 살아있는 동안 해제되어
+///  '_dependents.isEmpty' assertion 오류가 발생함)
+class _ReviewerLoginDialog extends StatefulWidget {
+  const _ReviewerLoginDialog();
+
+  @override
+  State<_ReviewerLoginDialog> createState() => _ReviewerLoginDialogState();
+}
+
+class _ReviewerLoginDialogState extends State<_ReviewerLoginDialog> {
+  final TextEditingController _controller = TextEditingController();
+  bool _isLoading = false;
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    final result = await ApiService.adminLogin(_controller.text);
+    if (!mounted) return;
+
+    // 성공: 심사관 모드 활성화 후 결과와 함께 닫기
+    if (result.token != null) {
+      await CreditManager.enterAdminMode();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('audit_token', result.token!);
+      if (!mounted) return;
+      Navigator.of(context).pop(const _ReviewerLoginResult(success: true));
+      return;
+    }
+
+    // 429 브루트포스 잠금: 안내와 함께 닫기
+    if (result.error != null && result.error!.contains('15분')) {
+      Navigator.of(context)
+          .pop(_ReviewerLoginResult(lockedMessage: result.error));
+      return;
+    }
+
+    // 일반 실패: 다이얼로그 유지하고 에러만 표시
+    setState(() {
+      _isLoading = false;
+      _errorText = result.error ?? '인증에 실패했습니다.';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.surfaceColor,
+      title: const Text('🔐 심사관 인증',
+          style: TextStyle(color: Colors.white, fontSize: 16)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '스토어 심사관 전용 접근입니다.\n발급받은 시크릿 코드를 입력하세요.',
+            style: TextStyle(color: Colors.white54, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            obscureText: true,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Secret Code',
+              errorText: _errorText,
+              errorStyle: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          child: const Text('취소', style: TextStyle(color: Colors.white54)),
+        ),
+        TextButton(
+          onPressed: _isLoading ? null : _submit,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : const Text('로그인', style: TextStyle(color: Colors.white)),
+        ),
+      ],
     );
   }
 }
