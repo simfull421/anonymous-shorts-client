@@ -129,6 +129,9 @@ class _FeedScreenState extends State<FeedScreen> {
 
       final result = await ApiService.getFeed(ApiService.deviceLanguage, forceRefresh: forceRefresh);
 
+      // 서버 SystemConfig의 글쓰기 비용 동기화 (UI 게이지·버튼 기준)
+      await CreditManager.syncWriteCost(result.writeCost);
+
       // B6: 서버 크레딧 동기화
       if (result.creditBalance >= 0) {
         await CreditManager.syncBalance(result.creditBalance);

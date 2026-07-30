@@ -7,7 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class CreditManager {
   static const String _key = 'credit_balance';
-  static const int writeCost = 10;
+  static const String _costKey = 'write_credit_cost';
+
+  /// 글쓰기 비용 — 서버 SystemConfig(WRITE_CREDIT_COST)를 따른다.
+  /// 서버 응답을 받기 전에는 마지막으로 저장된 값(없으면 기본값)을 사용.
+  static int _writeCost = _defaultWriteCost;
+  static const int _defaultWriteCost = 10;
+  static int get writeCost => _writeCost;
+
   static const int maxCredit = 20; // UC02 예외흐름 E1: 크레딧 상한선
 
   static int _cached = 0;
@@ -24,8 +31,18 @@ class CreditManager {
     final prefs = await SharedPreferences.getInstance();
     _isAdminMode = prefs.getBool('is_admin_mode') ?? false;
     _cached = _isAdminMode ? 999 : (prefs.getInt(_key) ?? 0);
+    _writeCost = prefs.getInt(_costKey) ?? _defaultWriteCost;
     _initialized = true;
     return _cached;
+  }
+
+  /// 서버가 내려준 글쓰기 비용 동기화 (SystemConfig.WRITE_CREDIT_COST)
+  static Future<void> syncWriteCost(int? serverCost) async {
+    if (serverCost == null || serverCost <= 0) return;
+    if (serverCost == _writeCost) return;
+    _writeCost = serverCost;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_costKey, serverCost);
   }
 
   /// 투표 시 크레딧 +1 (UC02)

@@ -131,7 +131,7 @@ class ApiService {
 
   /// [API 2] 피드 가져오기 (GET /api/shorts?lang=ko&cursor=123&voter=uuid)
   /// 커서 기반 페이지네이션 적용, 본인 피드 제외, 투표 상태 포함
-  static Future<({List<ShortsModel> items, int? nextCursor, int creditBalance})> getFeed(
+  static Future<({List<ShortsModel> items, int? nextCursor, int creditBalance, int? writeCost})> getFeed(
     String langCode, {
     bool forceRefresh = false,
     int? cursor,
@@ -155,8 +155,15 @@ class ApiService {
         .toList();
     final nextCursor = ((result['nextCursor'] ?? result['NextCursor']) as int?);
     final creditBalance = ((result['creditBalance'] ?? result['CreditBalance']) as int?) ?? -1;
+    // 서버 SystemConfig의 글쓰기 비용 (없으면 null → 클라이언트 기존 값 유지)
+    final writeCost = ((result['writeCost'] ?? result['WriteCost']) as int?);
 
-    return (items: items, nextCursor: nextCursor, creditBalance: creditBalance);
+    return (
+      items: items,
+      nextCursor: nextCursor,
+      creditBalance: creditBalance,
+      writeCost: writeCost,
+    );
   }
 
   /// [API 3] 마이페이지 - 내 쇼츠 조회 (GET /api/shorts/my)
