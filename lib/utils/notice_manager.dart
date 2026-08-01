@@ -6,6 +6,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_links.dart';
 
 class AppNotice {
   final int id;
@@ -47,8 +48,7 @@ class NoticeManager {
   static const String _cacheKey = 'notices_cache_json';
 
   /// 공지 원본 (GitHub Pages). 여기에 항목을 추가하고 push하면 즉시 반영된다.
-  static const String _remoteUrl =
-      'https://simfull421.github.io/anonymous-shorts-privacy/notices.json';
+  static const String _remoteUrl = AppLinks.noticesJson;
 
   /// 네트워크·캐시 모두 실패했을 때 사용하는 내장 기본 공지
   static const List<AppNotice> _fallbackNotices = [
@@ -67,8 +67,7 @@ class NoticeManager {
         '영문판(English) 문서가 추가되었습니다.',
         '개정된 문서는 정식 출시일부터 적용됩니다. 자세한 내용은 아래 링크에서 확인하실 수 있습니다.',
       ],
-      linkUrl:
-          'https://simfull421.github.io/anonymous-shorts-privacy/privacy_policy.html',
+      linkUrl: AppLinks.privacyPolicy,
       linkLabel: '개정 전문 보기',
     ),
   ];

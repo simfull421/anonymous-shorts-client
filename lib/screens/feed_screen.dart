@@ -49,6 +49,10 @@ class _FeedScreenState extends State<FeedScreen> {
   // 💫 투표 시 +1 플로팅 애니메이션 트리거 (증가할 때마다 재생)
   int _plusOneTick = 0;
 
+  // 🔀 셔플 트리거 — 값이 바뀌면 카드가 새 key를 받아 진입 애니메이션을 다시 재생
+  int _shuffleTick = 0;
+  bool _isShuffling = false;
+
   late final PageController _pageController;
 
   @override
@@ -159,6 +163,37 @@ class _FeedScreenState extends State<FeedScreen> {
         });
       }
     }
+  }
+
+  /// 당김 새로고침 → 기존 쇼츠를 셔플하여 새 순서로 표시
+  /// _shuffleTick을 올려 카드 key를 바꾸면 카드의 진입 애니메이션이 다시 재생된다.
+  Future<void> _shuffleFeed() async {
+    if (_shorts.length <= 1) return;
+
+    HapticFeedback.mediumImpact();
+
+    // 셔플 직전에 살짝 페이드아웃 → 교체된 순서가 갑자기 튀어나오지 않게
+    setState(() => _isShuffling = true);
+    await Future.delayed(const Duration(milliseconds: 160));
+
+    if (!mounted) return;
+    setState(() {
+      _shorts.shuffle();
+      _plusOneTick = 0;
+      _shuffleTick++;
+    });
+
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(0);
+    }
+
+    // 첫 프레임이 그려진 뒤 페이드인
+    await Future.delayed(const Duration(milliseconds: 40));
+    if (!mounted) return;
+    setState(() => _isShuffling = false);
+
+    // RefreshIndicator 스피너가 자연스럽게 접히도록 여유를 둔다
+    await Future.delayed(const Duration(milliseconds: 260));
   }
 
   Future<void> _fetchMore() async {
@@ -291,19 +326,24 @@ class _FeedScreenState extends State<FeedScreen> {
       bottomNavigationBar: _buildBottomBar(),
       body: Stack(
         children: [
-          // 당김 새로고침 (표준 인디케이터)
+          // 당김 새로고침 → 셔플 (이미 로드된 쇼츠를 랜덤 순서로 재배치)
           RefreshIndicator(
-            onRefresh: () => _loadFeed(forceRefresh: true),
+            onRefresh: _shuffleFeed,
             color: AppTheme.accentColor,
             backgroundColor: AppTheme.cardColor,
-            child: PageView.builder(
-              controller: _pageController,
-              scrollDirection: Axis.vertical,
-              itemCount: visibleShorts.length,
-              itemBuilder: (context, index) {
-                final short = visibleShorts[index];
-                return _buildShortsCard(short, index);
-              },
+            child: AnimatedOpacity(
+              opacity: _isShuffling ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+              child: PageView.builder(
+                controller: _pageController,
+                scrollDirection: Axis.vertical,
+                itemCount: visibleShorts.length,
+                itemBuilder: (context, index) {
+                  final short = visibleShorts[index];
+                  return _buildShortsCard(short, index);
+                },
+              ),
             ),
           ),
           // 📢 미확인 공지 배너 (상단 슬라이드 다운)
@@ -363,6 +403,8 @@ class _FeedScreenState extends State<FeedScreen> {
     final bool hasVoted = _votedShortsMap.containsKey(short.id);
 
     return ShortsCard(
+      // 셔플 시 key가 바뀌어 카드 진입 애니메이션이 다시 재생된다
+      key: ValueKey('short_${short.id}_$_shuffleTick'),
       short: short,
       hasVoted: hasVoted,
       votedIndex: _votedShortsMap[short.id],

@@ -4,12 +4,10 @@
 //   (게시물 ID·본문 스냅샷·접수 시각을 앱이 자동 첨부)
 // - 자해/자살 조장 신고는 트랙 A 항목이지만 임계치를 기다리지 않고 즉시 접수 경로로 우회
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
+import '../config/app_links.dart';
 import '../models/shorts_model.dart';
 import 'report_button.dart';
-
-const String kOperatorEmail = 'anonymous.shorts.official@gmail.com';
 
 /// 신고 시트 열기
 void showReportSheet(
@@ -187,6 +185,8 @@ class _ReportSheet extends StatelessWidget {
   /// 트랙 B — 권리침해/긴급 신고. 운영자 이메일로 즉시 접수
   /// 게시물 ID, 본문 스냅샷, 접수 시각을 앱이 자동으로 채워 넣는다.
   Future<void> _submitUrgentReport(BuildContext context, String type) async {
+    // 시트를 닫으면 이 context는 무효가 되므로 messenger를 먼저 확보한다
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
 
     // 피드에서는 즉시 숨김 처리 (신고자 보호)
@@ -217,25 +217,7 @@ ${short.textContent}
 * 접수 후 지체 없이 검토하며, 통상 7일 이내에 결과를 회신드립니다.
 ''';
 
-    final uri = Uri(
-      scheme: 'mailto',
-      path: kOperatorEmail,
-      query: 'subject=${Uri.encodeComponent(subject)}'
-          '&body=${Uri.encodeComponent(body)}',
-    );
-
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('메일 앱을 열 수 없습니다. $kOperatorEmail 으로 보내주세요.'),
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
-    }
+    await openMailWith(messenger, subject: subject, body: body);
   }
 }
 
@@ -267,23 +249,5 @@ Future<void> launchExpiredContentReport(BuildContext context) async {
 * 접수 후 지체 없이 검토하며, 통상 7일 이내에 결과를 회신드립니다.
 ''';
 
-  final uri = Uri(
-    scheme: 'mailto',
-    path: kOperatorEmail,
-    query: 'subject=${Uri.encodeComponent(subject)}'
-        '&body=${Uri.encodeComponent(body)}',
-  );
-
-  try {
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } catch (_) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('메일 앱을 열 수 없습니다. $kOperatorEmail 으로 보내주세요.'),
-          duration: Duration(seconds: 4),
-        ),
-      );
-    }
-  }
+  await openMail(context, subject: subject, body: body);
 }

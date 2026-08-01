@@ -3,9 +3,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
+import '../config/app_links.dart';
 import '../components/coach_mark_overlay.dart';
 import '../components/notice_banner.dart';
 import '../components/report_sheet.dart';
@@ -163,27 +163,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('브라우저를 열 수 없습니다.')),
-            );
-          }
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('링크를 열 수 없습니다.')),
-        );
-      }
-    }
-  }
-
   /// UC09: 심사관 로그인 모달 (버전 표시 5회 탭으로 진입)
   /// 다이얼로그 본체는 _ReviewerLoginDialog가 담당하고,
   /// 여기서는 결과를 받아 스낵바만 띄운다.
@@ -241,8 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: '개인정보처리방침',
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _openUrl(
-                      'https://simfull421.github.io/anonymous-shorts-privacy/privacy_policy.html');
+                  openExternalUrl(context, AppLinks.privacyPolicy);
                 },
               ),
               _policyTile(
@@ -250,8 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: '서비스 이용약관',
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _openUrl(
-                      'https://simfull421.github.io/anonymous-shorts-privacy/terms_of_service.html');
+                  openExternalUrl(context, AppLinks.termsOfService);
                 },
               ),
               _policyTile(

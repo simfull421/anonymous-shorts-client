@@ -6,8 +6,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
+import '../config/app_links.dart';
 import '../models/shorts_model.dart';
 import 'vote_button.dart';
 import 'report_sheet.dart';
@@ -161,14 +161,10 @@ class ShortsCard extends StatelessWidget {
                               width: double.infinity,
                               child: ElevatedButton(
                                 style: AppTheme.submitButtonStyle,
-                                onPressed: () async {
-                                  if (short.targetUrl != null) {
-                                    final uri = Uri.parse(short.targetUrl!);
-                                    if (await canLaunchUrl(uri)) {
-                                      await launchUrl(uri,
-                                          mode:
-                                              LaunchMode.externalApplication);
-                                    }
+                                onPressed: () {
+                                  final url = short.targetUrl;
+                                  if (url != null) {
+                                    openExternalUrl(context, url);
                                   }
                                 },
                                 child: Text(btn.text),

@@ -5,12 +5,13 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
+import '../config/app_links.dart';
 
 /// 서버 응답 코드 상수 (서버와 약속된 값)
 const String kSelfHarmCode = 'SELF_HARM_DETECTED';
 
 /// 자살예방상담전화
-const String kSuicidePreventionLine = '109';
+const String kSuicidePreventionLine = AppLinks.suicidePreventionLine;
 
 void showSafetyDialog(BuildContext context) {
   showDialog(

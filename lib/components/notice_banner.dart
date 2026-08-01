@@ -4,8 +4,8 @@
 // - X 탭 또는 상세 확인 시 markLatestSeen() 처리 후 다시 노출 안 함
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
+import '../config/app_links.dart';
 import '../utils/notice_manager.dart';
 
 class NoticeBanner extends StatelessWidget {
@@ -189,13 +189,7 @@ void showNoticeDetailSheet(
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final uri = Uri.parse(notice.linkUrl!);
-                    try {
-                      await launchUrl(uri,
-                          mode: LaunchMode.externalApplication);
-                    } catch (_) {}
-                  },
+                  onPressed: () => openExternalUrl(context, notice.linkUrl!),
                   icon: const Icon(Icons.open_in_new, size: 16),
                   label: Text(notice.linkLabel ?? '자세히 보기'),
                   style: OutlinedButton.styleFrom(

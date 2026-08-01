@@ -3,8 +3,8 @@
 // - SharedPreferences에 동의 여부 저장
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../app_theme.dart';
+import '../config/app_links.dart';
 
 class ConsentScreen extends StatefulWidget {
   const ConsentScreen({super.key});
@@ -21,10 +21,6 @@ class _ConsentScreenState extends State<ConsentScreen> {
 
   bool get _allChecked => _privacyChecked && _termsChecked && _responsibilityChecked;
 
-  // GitHub Pages 호스팅 법적 문서 URL
-  static const String _privacyUrl = 'https://simfull421.github.io/anonymous-shorts-privacy/privacy_policy.html';
-  static const String _termsUrl = 'https://simfull421.github.io/anonymous-shorts-privacy/terms_of_service.html';
-
   Future<void> _acceptAndContinue() async {
     if (!_allChecked) return;
     setState(() => _isLoading = true);
@@ -37,26 +33,6 @@ class _ConsentScreenState extends State<ConsentScreen> {
     }
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('브라우저를 열 수 없습니다.')),
-            );
-          }
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('링크를 열 수 없습니다.')),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +68,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
                 title: '개인정보처리방침',
                 checked: _privacyChecked,
                 onChanged: (v) => setState(() => _privacyChecked = v ?? false),
-                onLinkTap: () => _openUrl(_privacyUrl),
+                onLinkTap: () => openExternalUrl(context, AppLinks.privacyPolicy),
               ),
               const SizedBox(height: 16),
 
@@ -101,7 +77,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
                 title: '서비스 이용약관',
                 checked: _termsChecked,
                 onChanged: (v) => setState(() => _termsChecked = v ?? false),
-                onLinkTap: () => _openUrl(_termsUrl),
+                onLinkTap: () => openExternalUrl(context, AppLinks.termsOfService),
               ),
               const SizedBox(height: 16),
 
