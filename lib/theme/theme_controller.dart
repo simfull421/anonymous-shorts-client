@@ -51,7 +51,7 @@ class ThemedBuilder extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<AppPalette>(
       valueListenable: ThemeController.palette,
-      builder: (context, _, __) => builder(context),
+      builder: (context, _, _) => builder(context),
     );
   }
 }

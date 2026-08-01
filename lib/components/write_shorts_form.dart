@@ -323,7 +323,7 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: ReactionPresets.all.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
                 itemBuilder: (context, i) {
                   final preset = ReactionPresets.all[i];
                   final selected = _activePreset?.id == preset.id;
