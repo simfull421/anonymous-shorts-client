@@ -38,6 +38,13 @@ class ShortsModel {
   final String? bgmId;
   final String status; // Active, Blind, Expired, Ad
   final DateTime createdAt;
+
+  /// 소멸 예정 시각. 서버가 계산해서 내려준다.
+  /// 구버전 서버(또는 이 필드가 없는 응답)에서는 null이 되므로
+  /// 화면에서는 null 검사를 하고 표시를 생략한다. (임의로 24시간을 더하지 않는다 —
+  /// 그러면 서버 정책이 바뀌었을 때 화면이 조용히 거짓말을 하게 된다)
+  final DateTime? expiresAt;
+
   final bool isAd;
   final String? targetUrl;
   final String? creatorHash;
@@ -51,6 +58,7 @@ class ShortsModel {
     this.bgmId,
     this.status = 'Active',
     required this.createdAt,
+    this.expiresAt,
     this.isAd = false,
     this.targetUrl,
     this.creatorHash,
@@ -86,6 +94,8 @@ class ShortsModel {
       bgmId: json['BgmId'] ?? json['bgmId'] ?? json['bgm_id'],
       status: (json['Status'] ?? json['status'] ?? 'Active') as String,
       createdAt: _parseDateTime(json['CreatedAt'] ?? json['createdAt'] ?? json['created_at']),
+      expiresAt: _parseNullableDateTime(
+          json['ExpiresAt'] ?? json['expiresAt'] ?? json['expires_at']),
       isAd: (json['IsAd'] ?? json['isAd'] ?? false) as bool,
       targetUrl: json['TargetUrl'] ?? json['targetUrl'],
       creatorHash: json['CreatorHash'] ?? json['creatorHash'],
@@ -96,6 +106,12 @@ class ShortsModel {
   /// 현재 버튼들의 투표 합계 (퍼센트 계산용, totalVotes 대신 실시간 합산)
   int get computedTotalVotes =>
       buttons.fold<int>(0, (sum, btn) => sum + btn.votes);
+
+  /// 서버가 안 내려주면 null. 없는 값을 추측해서 만들지 않는다.
+  static DateTime? _parseNullableDateTime(dynamic value) {
+    if (value is String) return DateTime.tryParse(value)?.toLocal();
+    return null;
+  }
 
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) return DateTime.now();

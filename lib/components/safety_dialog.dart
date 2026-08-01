@@ -30,14 +30,14 @@ void showSafetyDialog(BuildContext context) {
               color: AppTheme.secondaryAccent.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.favorite_rounded,
+            child: Icon(Icons.favorite_rounded,
                 color: AppTheme.secondaryAccent, size: 30),
           ),
           const SizedBox(height: 18),
-          const Text(
+          Text(
             '혹시 지금 많이 힘드신가요?',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.textPrimary,
               fontSize: 17,
               fontWeight: FontWeight.w700,
             ),
@@ -49,7 +49,7 @@ void showSafetyDialog(BuildContext context) {
             '지금 겪고 계신 어려움을 함께 이야기할 수 있는 곳이 있어요.\n'
             '언제든지, 무료로 연결됩니다.',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: AppTheme.textPrimary.withValues(alpha: 0.72),
               fontSize: 13.5,
               height: 1.6,
             ),
@@ -65,12 +65,12 @@ void showSafetyDialog(BuildContext context) {
             ),
             child: Column(
               children: [
-                const Text(
+                Text(
                   '자살예방 상담전화',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                  style: TextStyle(color: AppTheme.textTertiary, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   kSuicidePreventionLine,
                   style: TextStyle(
                     color: AppTheme.secondaryAccent,
@@ -83,7 +83,7 @@ void showSafetyDialog(BuildContext context) {
                 Text(
                   '24시간 · 무료 · 익명 상담',
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
+                      color: AppTheme.textPrimary.withValues(alpha: 0.4), fontSize: 11),
                 ),
               ],
             ),
@@ -106,7 +106,8 @@ void showSafetyDialog(BuildContext context) {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.secondaryAccent,
-              foregroundColor: Colors.black,
+              // 시안(다크)에는 검정, 짙은 청록(라이트)에는 흰색이 읽힌다
+              foregroundColor: AppTheme.isDark ? Colors.black : Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -118,8 +119,8 @@ void showSafetyDialog(BuildContext context) {
           width: double.infinity,
           child: TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('닫기',
-                style: TextStyle(color: Colors.white38, fontSize: 14)),
+            child: Text('닫기',
+                style: TextStyle(color: AppTheme.textDisabled, fontSize: 14)),
           ),
         ),
       ],

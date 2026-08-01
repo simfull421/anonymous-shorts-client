@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../config/app_links.dart';
+import '../theme/theme_controller.dart';
 
 class ConsentScreen extends StatefulWidget {
   const ConsentScreen({super.key});
@@ -36,6 +37,10 @@ class _ConsentScreenState extends State<ConsentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ThemedBuilder(builder: _buildScaffold);
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -53,13 +58,13 @@ class _ConsentScreenState extends State<ConsentScreen> {
               Text(
                 '회원가입 없이 익명으로 바로 시작해요.\n이름, 이메일, 전화번호는 수집하지 않아요.',
                 style: AppTheme.bodyStyle.copyWith(
-                  color: Colors.white70,
+                  color: AppTheme.textSecondary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 '시작하려면 아래 약관에 동의해 주세요.',
-                style: TextStyle(color: Colors.white38, fontSize: 13),
+                style: TextStyle(color: AppTheme.textDisabled, fontSize: 13),
               ),
               const Spacer(flex: 3),
 
@@ -103,14 +108,14 @@ class _ConsentScreenState extends State<ConsentScreen> {
                   children: [
                     Icon(
                       _allChecked ? Icons.check_circle : Icons.check_circle_outline,
-                      color: _allChecked ? AppTheme.accentColor : Colors.white38,
+                      color: _allChecked ? AppTheme.accentColor : AppTheme.textDisabled,
                       size: 22,
                     ),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       '전체 동의',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -166,19 +171,19 @@ class _ConsentScreenState extends State<ConsentScreen> {
             onChanged: onChanged,
             activeColor: AppTheme.accentColor,
             checkColor: Colors.white,
-            side: const BorderSide(color: Colors.white38),
+            side: BorderSide(color: AppTheme.textDisabled),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
         ),
         const SizedBox(width: 12),
         Text(
           '[필수] $title',
-          style: const TextStyle(color: Colors.white, fontSize: 15),
+          style: TextStyle(color: AppTheme.textPrimary, fontSize: 15),
         ),
         const Spacer(),
         GestureDetector(
           onTap: onLinkTap,
-          child: const Text(
+          child: Text(
             '보기',
             style: TextStyle(
               color: AppTheme.secondaryAccent,
@@ -209,7 +214,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
             onChanged: onChanged,
             activeColor: AppTheme.accentColor,
             checkColor: Colors.white,
-            side: const BorderSide(color: Colors.white38),
+            side: BorderSide(color: AppTheme.textDisabled),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
         ),
@@ -217,7 +222,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
           ),
         ),
       ],

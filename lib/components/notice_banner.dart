@@ -53,7 +53,7 @@ class NoticeBanner extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.campaign_outlined,
+              Icon(Icons.campaign_outlined,
                   color: AppTheme.accentColor, size: 22),
               const SizedBox(width: 10),
               Expanded(
@@ -63,8 +63,8 @@ class NoticeBanner extends StatelessWidget {
                   children: [
                     Text(
                       notice.title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -75,7 +75,7 @@ class NoticeBanner extends StatelessWidget {
                     Text(
                       '${notice.summary} · 자세히 보기',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: AppTheme.textPrimary.withValues(alpha: 0.55),
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -85,12 +85,17 @@ class NoticeBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              GestureDetector(
+              Semantics(
+                button: true,
+                label: '공지 닫기',
+                child: GestureDetector(
                 onTap: _dismiss,
                 behavior: HitTestBehavior.opaque,
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(Icons.close, color: Colors.white38, size: 18),
+                // 탭 영역 44px 확보 (아이콘 18 + 여백 13×2)
+                child: Padding(
+                  padding: const EdgeInsets.all(13),
+                  child: Icon(Icons.close, color: AppTheme.textDisabled, size: 18),
+                ),
                 ),
               ),
             ],
@@ -132,14 +137,14 @@ void showNoticeDetailSheet(
           children: [
             Row(
               children: [
-                const Icon(Icons.campaign_outlined,
+                Icon(Icons.campaign_outlined,
                     color: AppTheme.accentColor, size: 22),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     notice.title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -149,7 +154,7 @@ void showNoticeDetailSheet(
             ),
             const SizedBox(height: 4),
             Text(notice.date,
-                style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                style: TextStyle(color: AppTheme.textDisabled, fontSize: 12)),
             const SizedBox(height: 14),
             Flexible(
               child: SingleChildScrollView(
@@ -162,15 +167,15 @@ void showNoticeDetailSheet(
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('•  ',
+                              Text('•  ',
                                   style: TextStyle(
                                       color: AppTheme.accentColor,
                                       fontSize: 13)),
                               Expanded(
                                 child: Text(
                                   d,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
                                     fontSize: 13.5,
                                     height: 1.5,
                                   ),

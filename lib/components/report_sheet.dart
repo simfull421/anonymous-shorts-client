@@ -45,10 +45,10 @@ class _ReportSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '신고 사유를 선택해 주세요',
               style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.textPrimary,
                   fontSize: 17,
                   fontWeight: FontWeight.bold),
             ),
@@ -85,7 +85,7 @@ class _ReportSheet extends StatelessWidget {
             ),
 
             const SizedBox(height: 14),
-            const Divider(color: Colors.white12, height: 1),
+            Divider(color: AppTheme.dividerColor, height: 1),
             const SizedBox(height: 14),
 
             // ── 트랙 B: 권리침해 (1건 즉시 처리) ──
@@ -117,7 +117,7 @@ class _ReportSheet extends StatelessWidget {
             Text(
               '권리침해 신고는 접수 후 지체 없이 검토하며, 통상 7일 이내에 결과를 회신드립니다.',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.35), fontSize: 11),
+                  color: AppTheme.textPrimary.withValues(alpha: 0.35), fontSize: 11),
             ),
             const SizedBox(height: 6),
           ],
@@ -133,14 +133,14 @@ class _ReportSheet extends StatelessWidget {
         children: [
           Text(
             text,
-            style: const TextStyle(
-                color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                color: AppTheme.textDisabled, fontSize: 12, fontWeight: FontWeight.w600),
           ),
           if (note != null) ...[
             const SizedBox(width: 8),
             Text(
               note,
-              style: const TextStyle(
+              style: TextStyle(
                   color: AppTheme.secondaryAccent, fontSize: 11),
             ),
           ],
@@ -162,16 +162,16 @@ class _ReportSheet extends StatelessWidget {
       dense: true,
       visualDensity: const VisualDensity(vertical: -1),
       leading: Icon(icon,
-          color: highlight ? AppTheme.secondaryAccent : Colors.white54,
+          color: highlight ? AppTheme.secondaryAccent : AppTheme.textTertiary,
           size: 21),
       title: Text(title,
-          style: const TextStyle(color: Colors.white, fontSize: 14.5)),
+          style: TextStyle(color: AppTheme.textPrimary, fontSize: 14.5)),
       subtitle: subtitle != null
           ? Text(subtitle,
-              style: const TextStyle(
+              style: TextStyle(
                   color: AppTheme.secondaryAccent, fontSize: 11))
           : null,
-      trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
+      trailing: Icon(Icons.chevron_right, color: AppTheme.textFaint, size: 20),
       onTap: onTap,
     );
   }

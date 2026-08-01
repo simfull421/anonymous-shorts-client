@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../app_theme.dart';
+import '../theme/theme_controller.dart';
 import '../models/shorts_model.dart';
 import '../services/api_service.dart';
 import '../utils/credit_manager.dart';
@@ -278,21 +279,24 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackPress();
-      },
-      child: _buildScaffold(context),
+    // ThemedBuilder: 이 화면이 Navigator에 쌓인 채로 테마가 바뀌어도 즉시 반영
+    return ThemedBuilder(
+      builder: (context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _handleBackPress();
+        },
+        child: _buildScaffold(context),
+      ),
     );
   }
 
   Widget _buildScaffold(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(color: Colors.white),
+          child: CircularProgressIndicator(color: AppTheme.textPrimary),
         ),
       );
     }
@@ -311,7 +315,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
     if (visibleShorts.isEmpty) {
       return Scaffold(
-        body: const Center(
+        body: Center(
           child: Text(
             '피드가 없습니다.\n잠시 후 다시 시도해 주세요.',
             style: AppTheme.bodyStyle,
@@ -326,8 +330,13 @@ class _FeedScreenState extends State<FeedScreen> {
       bottomNavigationBar: _buildBottomBar(),
       body: Stack(
         children: [
-          // 당김 새로고침 → 셔플 (이미 로드된 쇼츠를 랜덤 순서로 재배치)
-          RefreshIndicator(
+          // edge-to-edge(Android 15)에서 카드가 상태바 아래로 파고들지 않도록.
+          // 코치마크·공지 배너는 이 밖에 둬야 화면 전체를 덮을 수 있다.
+          SafeArea(
+            bottom: false,
+            child:
+                // 당김 새로고침 → 셔플 (이미 로드된 쇼츠를 랜덤 순서로 재배치)
+                RefreshIndicator(
             onRefresh: _shuffleFeed,
             color: AppTheme.accentColor,
             backgroundColor: AppTheme.cardColor,
@@ -345,6 +354,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 },
               ),
             ),
+          ),
           ),
           // 📢 미확인 공지 배너 (상단 슬라이드 다운)
           if (_showNoticeBanner)
@@ -371,7 +381,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   // 다른 위젯(공지 배너 등) 제거로 인한 리빌드에는 오재생되지 않음
                   child: Text(
                     '+1',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.secondaryAccent,
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -443,15 +453,16 @@ class _FeedScreenState extends State<FeedScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppTheme.surfaceColor,
-        title: const Text('유저 차단', style: TextStyle(color: Colors.white, fontSize: 16)),
-        content: const Text(
+        title: Text('유저 차단',
+            style: TextStyle(color: AppTheme.textPrimary, fontSize: 16)),
+        content: Text(
           '이 유저의 모든 글이 피드에서 숨겨집니다.\n차단을 해제하려면 마이페이지에서 관리할 수 있습니다.',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('취소', style: TextStyle(color: Colors.white54)),
+            child: Text('취소', style: TextStyle(color: AppTheme.textTertiary)),
           ),
           TextButton(
             onPressed: () async {
@@ -479,16 +490,16 @@ class _FeedScreenState extends State<FeedScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_off, color: Colors.white24, size: 64),
+            Icon(Icons.cloud_off, color: AppTheme.textFaint, size: 64),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '서버에 연결할 수 없습니다',
-              style: TextStyle(color: Colors.white54, fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppTheme.textTertiary, fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '네트워크 연결을 확인해 주세요',
-              style: TextStyle(color: Colors.white24, fontSize: 13),
+              style: TextStyle(color: AppTheme.textDisabled, fontSize: 13),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -508,11 +519,15 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Widget _buildBottomBar() {
+    // Android 15 edge-to-edge: 제스처 바 높이만큼 바를 키우고 그만큼 아래 여백을 준다.
+    // SafeArea만 넣으면 72px 안에서 내용이 눌려버린다.
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
     return BottomAppBar(
       color: AppTheme.backgroundColor,
       elevation: 0,
-      height: 72,
-      padding: EdgeInsets.zero,
+      height: 72 + bottomInset,
+      padding: EdgeInsets.only(bottom: bottomInset),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -540,7 +555,7 @@ class _FeedScreenState extends State<FeedScreen> {
           _buildTabItem(
             icon: Icons.person_outline_rounded,
             label: '마이',
-            color: Colors.white54,
+            color: AppTheme.textTertiary,
             onTap: () async {
               await Navigator.pushNamed(context, '/mypage');
               // 마이페이지에서 돌아올 때 크레딧 배지 갱신 (심사관 999 반영)
@@ -585,9 +600,18 @@ class _FeedScreenState extends State<FeedScreen> {
         (CreditManager.balance / CreditManager.writeCost).clamp(0.0, 1.0);
     final bool canWrite = CreditManager.canWrite;
 
-    return GestureDetector(
-      onTap: _showWriteForm,
-      child: Stack(
+    // 스크린리더는 이 버튼을 그냥 '버튼'으로만 읽는다.
+    // 물 게이지와 배지는 시각 정보라서 소리로는 전달되지 않으므로 말로 풀어준다.
+    return Semantics(
+      button: true,
+      label: canWrite
+          ? '쇼츠 쓰기. 크레딧 ${CreditManager.balance}개, 작성 가능'
+          : '쇼츠 쓰기. 크레딧 ${CreditManager.balance}개, '
+              '${CreditManager.writeCost}개가 모이면 쓸 수 있어요',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: _showWriteForm,
+        child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
@@ -599,7 +623,7 @@ class _FeedScreenState extends State<FeedScreen> {
               border: Border.all(
                 color: canWrite
                     ? AppTheme.accentColor.withValues(alpha: 0.8)
-                    : Colors.white.withValues(alpha: 0.1),
+                    : AppTheme.glassBorder,
                 width: 1.5,
               ),
               boxShadow: canWrite
@@ -627,14 +651,15 @@ class _FeedScreenState extends State<FeedScreen> {
                     curve: Curves.easeOutCubic,
                     builder: (context, value, _) => Container(
                       height: 54 * value,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Color(0xFFB07CF0), // 수면 쪽은 밝게 (물 표면 느낌)
+                            // 수면 쪽은 밝게 (물 표면 느낌)
+                            AppTheme.accentColor.withValues(alpha: 0.75),
                             AppTheme.accentColor,
-                            Color(0xFF6C2BD9),
+                            const Color(0xFF6C2BD9),
                           ],
                         ),
                       ),
@@ -644,9 +669,9 @@ class _FeedScreenState extends State<FeedScreen> {
                 // 연필 아이콘
                 Icon(
                   Icons.edit_rounded,
-                  color: canWrite
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.55),
+                  // 크레딧이 차면 아이콘이 보라색 물 위에 놓이므로 항상 흰색,
+                  // 비어 있을 때는 입력 배경 위이므로 테마 색을 따른다
+                  color: canWrite ? Colors.white : AppTheme.textDisabled,
                   size: 26,
                 ),
               ],
@@ -659,14 +684,16 @@ class _FeedScreenState extends State<FeedScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                color: canWrite ? AppTheme.secondaryAccent : Colors.white24,
+                color: canWrite ? AppTheme.secondaryAccent : AppTheme.textFaint,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppTheme.backgroundColor, width: 2),
               ),
               child: Text(
                 '${CreditManager.balance}',
                 style: TextStyle(
-                  color: canWrite ? Colors.black : Colors.white70,
+                  color: canWrite
+                      ? (AppTheme.isDark ? Colors.black : Colors.white)
+                      : AppTheme.textSecondary,
                   fontWeight: FontWeight.w800,
                   fontSize: 12,
                 ),
@@ -681,6 +708,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
           ),
         ],
+        ),
       ),
     );
   }

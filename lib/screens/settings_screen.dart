@@ -6,6 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
 import '../config/app_links.dart';
+import '../theme/app_palette.dart';
+import '../theme/theme_controller.dart';
 import '../components/coach_mark_overlay.dart';
 import '../components/notice_banner.dart';
 import '../components/report_sheet.dart';
@@ -37,6 +39,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ThemedBuilder(builder: _buildScaffold);
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
       // 하단 시스템 내비게이션 바에 마지막 항목이 가려지지 않도록 SafeArea 적용
@@ -60,7 +66,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : '등록된 공지가 없어요',
             onTap: _showNoticeList,
           ),
-          const Divider(color: Colors.white12, height: 32),
+          _linkTile(
+            icon: Icons.palette_outlined,
+            title: '화면 테마',
+            subtitle: AppTheme.palette.label,
+            onTap: _showThemeSheet,
+          ),
+          Divider(color: AppTheme.dividerColor, height: 32),
 
           // ── 내 정보 ──
           _sectionHeader('내 정보'),
@@ -75,25 +87,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(
               _isExporting ? Icons.hourglass_top : Icons.download_outlined,
-              color: Colors.white54,
+              color: AppTheme.textTertiary,
             ),
-            title: const Text('내 데이터 받기', style: TextStyle(color: Colors.white)),
-            subtitle: const Text('내가 쓴 글과 활동 기록',
-                style: TextStyle(color: Colors.white38, fontSize: 12)),
+            title: Text('내 데이터 받기', style: TextStyle(color: AppTheme.textPrimary)),
+            subtitle: Text('내가 쓴 글과 활동 기록',
+                style: TextStyle(color: AppTheme.textDisabled, fontSize: 12)),
             trailing: _isExporting
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54))
-                : const Icon(Icons.chevron_right, color: Colors.white24),
+                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.textTertiary))
+                : Icon(Icons.chevron_right, color: AppTheme.textFaint),
             onTap: _isExporting ? null : _exportData,
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline, color: Color(0xFFFF6B81)),
             title: const Text('데이터 삭제', style: TextStyle(color: Color(0xFFFF6B81))),
-            subtitle: const Text('모든 기록이 영구적으로 지워져요',
-                style: TextStyle(color: Colors.white38, fontSize: 12)),
-            trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+            subtitle: Text('모든 기록이 영구적으로 지워져요',
+                style: TextStyle(color: AppTheme.textDisabled, fontSize: 12)),
+            trailing: Icon(Icons.chevron_right, color: AppTheme.textFaint),
             onTap: _showDataDeletionConfirm,
           ),
-          const Divider(color: Colors.white12, height: 32),
+          Divider(color: AppTheme.dividerColor, height: 32),
 
           // ── 기타 (법적 문서는 한 단계 안으로) ──
           _sectionHeader('기타'),
@@ -116,11 +128,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: GestureDetector(
               onTap: _hiddenJudge.onTap,
               behavior: HitTestBehavior.opaque,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 6),
                 child: Text(
                   '익명쇼츠 v1.1.0',
-                  style: TextStyle(color: Colors.white24, fontSize: 12),
+                  style: TextStyle(color: AppTheme.textDisabled, fontSize: 12),
                 ),
               ),
             ),
@@ -128,7 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Center(
             child: Text(
               '${ApiService.deviceLanguage.toUpperCase()} · ${DateTime.now().year}',
-              style: TextStyle(color: Colors.white12, fontSize: 11),
+              style: TextStyle(color: AppTheme.dividerColor, fontSize: 11),
             ),
           ),
           const SizedBox(height: 16),
@@ -143,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Text(
         title,
-        style: const TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.w600),
+        style: TextStyle(color: AppTheme.textDisabled, fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -155,10 +167,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Colors.white54),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 12)) : null,
-      trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+      leading: Icon(icon, color: AppTheme.textTertiary),
+      title: Text(title, style: TextStyle(color: AppTheme.textPrimary)),
+      subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: AppTheme.textDisabled, fontSize: 12)) : null,
+      trailing: Icon(Icons.chevron_right, color: AppTheme.textFaint),
       onTap: onTap,
     );
   }
@@ -193,6 +205,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// 화면 테마 선택 바텀시트
+  /// 선택 즉시 반영되고(ThemeController가 앱 전체를 다시 그림), 재시작 후에도 유지된다.
+  void _showThemeSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: ValueListenableBuilder<AppPalette>(
+          valueListenable: ThemeController.palette,
+          builder: (context, current, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Text(
+                  '화면 테마',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              ...AppPalettes.all.map((p) {
+                final selected = p.id == current.id;
+                return ListTile(
+                  leading: _themeSwatch(p),
+                  title: Text(
+                    p.label,
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight:
+                          selected ? FontWeight.w700 : FontWeight.normal,
+                    ),
+                  ),
+                  subtitle: Text(
+                    p.description,
+                    style:
+                        TextStyle(color: AppTheme.textDisabled, fontSize: 12),
+                  ),
+                  trailing: selected
+                      ? Icon(Icons.check_circle,
+                          color: AppTheme.accentColor, size: 22)
+                      : null,
+                  onTap: () => ThemeController.select(p),
+                );
+              }),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 테마 미리보기 — 배경/카드/포인트 3색을 겹쳐 보여준다
+  Widget _themeSwatch(AppPalette p) {
+    // 순수 장식 — 옆 텍스트가 이미 테마 이름을 말해주므로 중복해서 읽힐 필요가 없다
+    return ExcludeSemantics(
+      child: Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: p.background,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.dividerColor),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 6,
+            top: 6,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: p.accent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
   /// 약관 및 정책 바텀시트 (법적 문서 모음)
   void _showPolicySheet() {
     showModalBottomSheet(
@@ -209,9 +324,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('약관 및 정책',
+              Text('약관 및 정책',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
@@ -258,10 +373,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: Colors.white54, size: 21),
+      leading: Icon(icon, color: AppTheme.textTertiary, size: 21),
       title: Text(title,
-          style: const TextStyle(color: Colors.white, fontSize: 14.5)),
-      trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
+          style: TextStyle(color: AppTheme.textPrimary, fontSize: 14.5)),
+      trailing: Icon(Icons.chevron_right, color: AppTheme.textFaint, size: 20),
       onTap: onTap,
     );
   }
@@ -283,9 +398,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('도움말',
+              Text('도움말',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
@@ -333,21 +448,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppTheme.accentColor, size: 22),
+          // 도움말 항목 아이콘은 '강조'가 아니라 '목록 표식'이다.
+          // accent를 목록마다 뿌리면 정작 강조해야 할 곳에서 힘이 빠진다.
+          Icon(icon, color: AppTheme.textTertiary, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: AppTheme.textPrimary,
                         fontSize: 14.5,
                         fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(desc,
-                    style: const TextStyle(
-                        color: Colors.white54, fontSize: 12.5, height: 1.5)),
+                    style: TextStyle(
+                        color: AppTheme.textTertiary, fontSize: 12.5, height: 1.5)),
               ],
             ),
           ),
@@ -372,34 +489,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('공지사항',
+              Text('공지사항',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               if (NoticeManager.notices.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text('등록된 공지가 없습니다.',
-                        style: TextStyle(color: Colors.white38)),
+                        style: TextStyle(color: AppTheme.textDisabled)),
                   ),
                 )
               else
                 ...NoticeManager.notices.map(
                   (notice) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.campaign_outlined,
-                        color: AppTheme.accentColor, size: 22),
+                    leading: Icon(Icons.campaign_outlined,
+                        color: AppTheme.textTertiary, size: 22),
                     title: Text(notice.title,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 14.5)),
+                        style: TextStyle(
+                            color: AppTheme.textPrimary, fontSize: 14.5)),
                     subtitle: Text(notice.date,
-                        style: const TextStyle(
-                            color: Colors.white38, fontSize: 12)),
-                    trailing: const Icon(Icons.chevron_right,
-                        color: Colors.white24),
+                        style: TextStyle(
+                            color: AppTheme.textDisabled, fontSize: 12)),
+                    trailing: Icon(Icons.chevron_right,
+                        color: AppTheme.textFaint),
                     onTap: () {
                       Navigator.pop(sheetContext);
                       showNoticeDetailSheet(context, notice,
@@ -432,26 +549,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('차단한 유저', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('차단한 유저', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               if (blocked.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
-                    child: Text('차단한 유저가 없습니다.', style: TextStyle(color: Colors.white38)),
+                    child: Text('차단한 유저가 없습니다.', style: TextStyle(color: AppTheme.textDisabled)),
                   ),
                 )
               else
                 ...blocked.map((hash) => ListTile(
-                      leading: const Icon(Icons.person_off, color: Colors.white38),
-                      title: Text('유저 #${hash.substring(0, 8)}', style: const TextStyle(color: Colors.white)),
+                      leading: Icon(Icons.person_off, color: AppTheme.textDisabled),
+                      title: Text('유저 #${hash.substring(0, 8)}', style: TextStyle(color: AppTheme.textPrimary)),
                       trailing: TextButton(
                         onPressed: () async {
                           await BlockManager.unblockUser(hash);
                           setSheetState(() => blocked.remove(hash));
                           setState(() {}); // 부모 리빌드
                         },
-                        child: const Text('차단 해제', style: TextStyle(color: AppTheme.accentColor)),
+                        child: Text('차단 해제', style: TextStyle(color: AppTheme.accentColor)),
                       ),
                     )),
               const SizedBox(height: 16),
@@ -494,14 +611,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppTheme.surfaceColor,
         title: const Text('⚠️ 데이터 삭제', style: TextStyle(color: Color(0xFFFF1744), fontSize: 16)),
-        content: const Text(
+        content: Text(
           '모든 사용자 데이터(작성한 쇼츠, 크레딧, 투표 기록)가\n영구적으로 삭제됩니다.\n\n법적 보관 의무가 있는 아카이브 로그는\n90일 후 자동 삭제됩니다.\n\n이 작업은 되돌릴 수 없습니다.',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('취소', style: TextStyle(color: Colors.white54)),
+            child: Text('취소', style: TextStyle(color: AppTheme.textTertiary)),
           ),
           TextButton(
             onPressed: () async {
@@ -597,20 +714,20 @@ class _ReviewerLoginDialogState extends State<_ReviewerLoginDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppTheme.surfaceColor,
-      title: const Text('🔐 심사관 인증',
-          style: TextStyle(color: Colors.white, fontSize: 16)),
+      title: Text('🔐 심사관 인증',
+          style: TextStyle(color: AppTheme.textPrimary, fontSize: 16)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             '스토어 심사관 전용 접근입니다.\n발급받은 시크릿 코드를 입력하세요.',
-            style: TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(color: AppTheme.textTertiary, fontSize: 13),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
             obscureText: true,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: AppTheme.textPrimary),
             decoration: InputDecoration(
               hintText: 'Secret Code',
               errorText: _errorText,
@@ -622,7 +739,7 @@ class _ReviewerLoginDialogState extends State<_ReviewerLoginDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('취소', style: TextStyle(color: Colors.white54)),
+          child: Text('취소', style: TextStyle(color: AppTheme.textTertiary)),
         ),
         TextButton(
           onPressed: _isLoading ? null : _submit,

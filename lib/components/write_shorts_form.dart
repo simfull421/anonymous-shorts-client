@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../config/reaction_presets.dart';
 import '../services/api_service.dart';
 import '../utils/credit_manager.dart';
 import 'safety_dialog.dart';
@@ -20,9 +21,12 @@ class WriteShortsForm extends StatefulWidget {
 
 class _WriteShortsFormState extends State<WriteShortsForm> {
   final TextEditingController _textController = TextEditingController();
+
+  /// 빈 칸이 아니라 기본 프리셋으로 시작한다.
+  /// 글을 쓰려고 들어온 사람이 반응 문구까지 발명해야 하는 지점을 없앤다.
   final List<TextEditingController> _buttonControllers = [
-    TextEditingController(),
-    TextEditingController(),
+    for (final t in ReactionPresets.defaultPreset.buttons)
+      TextEditingController(text: t),
   ];
 
   static const int _maxTotalChars = 180;
@@ -91,6 +95,39 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
     if (!CreditManager.canWrite) return false;
 
     return true;
+  }
+
+  /// 지금 입력값과 일치하는 프리셋 (없으면 null = 직접 입력 상태)
+  ReactionPreset? get _activePreset =>
+      ReactionPresets.match(_buttonControllers.map((c) => c.text).toList());
+
+  /// 프리셋 적용 — 칸 개수를 맞추고 값을 채운다.
+  /// 적용 후에도 각 칸은 그대로 편집 가능하다. 잠그는 게 아니라 출발점이다.
+  void _applyPreset(ReactionPreset preset) {
+    // 아직 화면에 붙어 있는 컨트롤러를 그 자리에서 dispose하면
+    // 그 프레임에 TextField가 이미 dispose된 컨트롤러를 참조할 수 있다.
+    // 리스트에서 먼저 떼어내고, 프레임이 끝난 뒤에 정리한다.
+    final discarded = <TextEditingController>[];
+
+    setState(() {
+      while (_buttonControllers.length > preset.buttons.length) {
+        discarded.add(_buttonControllers.removeLast());
+      }
+      while (_buttonControllers.length < preset.buttons.length) {
+        _buttonControllers.add(TextEditingController());
+      }
+      for (var i = 0; i < preset.buttons.length; i++) {
+        _buttonControllers[i].text = preset.buttons[i];
+      }
+    });
+
+    if (discarded.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final c in discarded) {
+          c.dispose();
+        }
+      });
+    }
   }
 
   void _addButton() {
@@ -201,10 +238,10 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
             // 헤더 (+ 크레딧 소모 칩)
             Row(
               children: [
-                const Text(
+                Text(
                   '쇼츠 작성',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -219,7 +256,7 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                   ),
                   child: Text(
                     '크레딧 -${CreditManager.writeCost}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.accentColor,
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
@@ -232,7 +269,7 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                   style: TextStyle(
                     color: _totalChars > _maxTotalChars
                         ? AppTheme.blindColor
-                        : Colors.white54,
+                        : AppTheme.textTertiary,
                     fontSize: 13,
                   ),
                 ),
@@ -245,7 +282,7 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
               controller: _textController,
               maxLines: 3,
               autofocus: true,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: AppTheme.textPrimary, fontSize: 18),
               decoration: InputDecoration(
                 hintText: '하고 싶은 말을 자유롭게 적어보세요 (최소 $_minTextChars자)',
               ),
@@ -261,15 +298,80 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
 
 
             // 반응 버튼 입력 영역
-            const Text(
-              '반응 버튼 설정',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+            Row(
+              children: [
+                Text(
+                  '반응 버튼',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '그대로 써도 되고, 고쳐도 돼요',
+                  style: TextStyle(color: AppTheme.textDisabled, fontSize: 11),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // 프리셋 칩 — 누르면 아래 칸이 채워진다 (잠기는 게 아니라 출발점)
+            SizedBox(
+              height: 32,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: ReactionPresets.all.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                itemBuilder: (context, i) {
+                  final preset = ReactionPresets.all[i];
+                  final selected = _activePreset?.id == preset.id;
+                  return GestureDetector(
+                    onTap: () => _applyPreset(preset),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppTheme.accentColor.withValues(alpha: 0.18)
+                            : AppTheme.glassFill,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: selected
+                              ? AppTheme.accentColor.withValues(alpha: 0.6)
+                              : AppTheme.glassBorder,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 선택 상태를 색으로만 알리지 않는다 (체크 + 굵기)
+                          if (selected) ...[
+                            Icon(Icons.check,
+                                size: 13, color: AppTheme.accentColor),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            preset.label,
+                            style: TextStyle(
+                              color: selected
+                                  ? AppTheme.accentColor
+                                  : AppTheme.textDisabled,
+                              fontSize: 13,
+                              fontWeight: selected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             ...List.generate(_buttonControllers.length, (index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -279,9 +381,9 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                       child: TextField(
                         controller: _buttonControllers[index],
                         style:
-                            const TextStyle(color: Colors.white, fontSize: 15),
+                            TextStyle(color: AppTheme.textPrimary, fontSize: 15),
                         decoration: InputDecoration(
-                          hintText: '반응 ${index + 1} (예: 공감, 경멸, 기괴...)',
+                          hintText: '반응 ${index + 1}',
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 12),
                         ),
@@ -290,9 +392,10 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                     ),
                     if (_buttonControllers.length > _minButtons)
                       IconButton(
+                        tooltip: '${index + 1}번 반응 버튼 삭제',
                         onPressed: () => _removeButton(index),
-                        icon: const Icon(Icons.close,
-                            color: Colors.white38, size: 20),
+                        icon: Icon(Icons.close,
+                            color: AppTheme.textDisabled, size: 20),
                       ),
                   ],
                 ),
@@ -305,7 +408,7 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                 onPressed: _addButton,
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('반응 버튼 추가'),
-                style: TextButton.styleFrom(foregroundColor: Colors.white54),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.textTertiary),
               ),
 
             const SizedBox(height: 12),
@@ -316,7 +419,7 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Text(
                   '투표로 크레딧을 모으면 글을 쓸 수 있어요 (${CreditManager.balance}/${CreditManager.writeCost})',
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppTheme.secondaryAccent, fontSize: 12.5),
                   textAlign: TextAlign.center,
                 ),
@@ -351,7 +454,7 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.black,
+                          color: Colors.white,
                           strokeWidth: 2,
                         ),
                       )
@@ -368,10 +471,10 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
 
             // 커뮤니티 가이드라인 안내 (탭 불가 플레인 텍스트)
             // 링크는 더블탭 오클릭 문제로 제거 — 전문은 설정 > 서비스 이용약관에서 확인 가능
-            const Center(
+            Center(
               child: Text(
                 '모든 쇼츠는 건강한 커뮤니티를 위해 가이드라인에 따라 검토돼요',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
+                style: TextStyle(color: AppTheme.textDisabled, fontSize: 11),
                 textAlign: TextAlign.center,
               ),
             ),

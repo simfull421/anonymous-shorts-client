@@ -5,7 +5,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../app_theme.dart';
+
+// 코치마크는 어떤 테마에서든 78% 검은 스크림 위에 그려진다.
+// 그래서 여기서만은 AppTheme을 따르지 않고 다크 기준 색을 고정한다.
+// (라이트 테마 색을 쓰면 검은 배경 위 검은 글씨가 된다)
+const Color _onScrim = Colors.white;
+const Color _onScrimMuted = Color(0xBFFFFFFF); // white 75%
+const Color _scrimAccent = Color(0xFF9D4EDD);
+const Color _scrimSecondary = Color(0xFF00E5FF);
 
 class CoachMarkOverlay extends StatefulWidget {
   final VoidCallback onFinished;
@@ -71,7 +78,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.keyboard_double_arrow_up_rounded,
-                color: AppTheme.secondaryAccent, size: 56)
+                color: _scrimSecondary, size: 56)
             .animate(onPlay: (c) => c.repeat())
             .slideY(begin: 0.25, end: -0.25, duration: 900.ms, curve: Curves.easeInOut)
             .fadeIn(duration: 300.ms),
@@ -80,7 +87,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
           '위로 스와이프하면\n다음 쇼츠가 나와요',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white,
+            color: _onScrim,
             fontSize: 22,
             fontWeight: FontWeight.w700,
             height: 1.4,
@@ -104,7 +111,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
             '감정 버튼에 투표하면\n크레딧이 1개씩 쌓여요',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white,
+              color: _onScrim,
               fontSize: 22,
               fontWeight: FontWeight.w700,
               height: 1.4,
@@ -116,7 +123,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
           '10개를 모으면 아래 연필 버튼으로\n나만의 쇼츠를 쓸 수 있어요 ✍️',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.75),
+            color: _onScrimMuted,
             fontSize: 15,
             height: 1.5,
           ),
@@ -126,7 +133,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
           '🎁 첫 투표에는 웰컴 보너스 10개를 바로 드려요!',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: AppTheme.secondaryAccent,
+            color: _scrimSecondary,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -136,7 +143,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
         const SizedBox(height: 24),
         // 하단 중앙 연필 버튼을 가리키는 화살표
         Icon(Icons.keyboard_double_arrow_down_rounded,
-                color: AppTheme.accentColor, size: 44)
+                color: _scrimAccent, size: 44)
             .animate(onPlay: (c) => c.repeat())
             .slideY(begin: -0.2, end: 0.2, duration: 800.ms, curve: Curves.easeInOut),
         const SizedBox(height: 66), // 하단 바 높이만큼 띄워 버튼 위를 가리키게
@@ -154,7 +161,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
           top: 90,
           right: 40,
           child: Icon(Icons.north_east_rounded,
-                  color: AppTheme.accentColor, size: 40)
+                  color: _scrimAccent, size: 40)
               .animate(onPlay: (c) => c.repeat(reverse: true))
               .slideY(begin: 0.15, end: -0.15, duration: 800.ms, curve: Curves.easeInOut),
         ),
@@ -165,13 +172,13 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.shield_outlined,
-                color: AppTheme.secondaryAccent, size: 44),
+                color: _scrimSecondary, size: 44),
             const SizedBox(height: 16),
             const Text(
               '불쾌한 쇼츠가 보이면\n오른쪽 위 ⋯ 메뉴를 눌러요',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white,
+                color: _onScrim,
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 height: 1.4,
@@ -182,7 +189,7 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
               '신고하거나 작성자를 차단하면\n피드에서 바로 사라져요',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.75),
+                color: _onScrimMuted,
                 fontSize: 15,
                 height: 1.5,
               ),
@@ -200,12 +207,12 @@ class _CoachMarkOverlayState extends State<CoachMarkOverlay> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        color: const Color(0x1FFFFFFF),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         text,
-        style: const TextStyle(color: Colors.white70, fontSize: 13),
+        style: const TextStyle(color: _onScrimMuted, fontSize: 13),
       ),
     ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(
         begin: 0.6, end: 1.0, duration: 900.ms);

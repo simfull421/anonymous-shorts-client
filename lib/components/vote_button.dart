@@ -9,6 +9,7 @@ import '../app_theme.dart';
 import '../models/shorts_model.dart';
 import '../services/api_service.dart';
 import '../utils/credit_manager.dart';
+import 'vote_burst.dart';
 
 class VoteButton extends StatefulWidget {
   final ButtonModel button;
@@ -41,6 +42,7 @@ class _VoteButtonState extends State<VoteButton>
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _percentAnimation;
+  late Animation<double> _barAnimation;
   bool _justVoted = false;
 
   @override
@@ -55,8 +57,13 @@ class _VoteButtonState extends State<VoteButton>
       TweenSequenceItem(tween: Tween(begin: 1.08, end: 0.95), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 0.95, end: 1.0), weight: 30),
     ]).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    // 숫자용 — 절대 1.0을 넘으면 안 된다 (넘으면 112% 같은 값이 찍힌다)
     _percentAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
+    // 막대용 — 살짝 넘쳤다 되돌아오며 '탁' 채워지는 느낌을 만든다
+    _barAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
     );
   }
 
@@ -96,7 +103,7 @@ class _VoteButtonState extends State<VoteButton>
       onPressed: () => _handleVote(context),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.cardColor,
-        foregroundColor: Colors.white,
+        foregroundColor: AppTheme.textPrimary,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
@@ -111,9 +118,14 @@ class _VoteButtonState extends State<VoteButton>
 
   /// 투표 후: 퍼센트 바 + 수치 표시
   Widget _buildResultButton() {
-    final animatedPercent =
-        _justVoted ? _percentAnimation.value * _percent : _percent;
-    final displayPercent = (animatedPercent * 100).toStringAsFixed(1);
+    // 숫자와 막대를 다른 커브로 굴린다 — 막대는 튀고, 숫자는 정확해야 한다
+    final numberProgress = _justVoted ? _percentAnimation.value : 1.0;
+    final barProgress = _justVoted ? _barAnimation.value.clamp(0.0, 1.15) : 1.0;
+
+    final animatedPercent = _percent * barProgress;
+    final displayPercent = (_percent * numberProgress * 100).toStringAsFixed(1);
+    // 결과가 공개되며 표 수가 0부터 올라간다
+    final displayVotes = (widget.button.votes * numberProgress).round();
 
     return GestureDetector(
       onTap: null, // 투표 후 비활성
@@ -130,16 +142,15 @@ class _VoteButtonState extends State<VoteButton>
         child: Stack(
           children: [
             // 퍼센트 바 (배경)
-            AnimatedContainer(
-              duration: _justVoted
-                  ? const Duration(milliseconds: 500)
-                  : const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
+            // AnimatedContainer가 아니라 Container인 이유:
+            // 폭을 AnimationController로 이미 매 프레임 직접 그리고 있어서,
+            // 그 위에 암시적 애니메이션을 얹으면 값이 뒤처지며 뭉개진다.
+            Container(
               width: MediaQuery.of(context).size.width * animatedPercent * 0.85,
               decoration: BoxDecoration(
                 color: _isMyVote
                     ? AppTheme.accentColor.withValues(alpha: 0.25)
-                    : Colors.white.withValues(alpha: 0.08),
+                    : AppTheme.glassFill,
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
@@ -155,14 +166,25 @@ class _VoteButtonState extends State<VoteButton>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_isMyVote) ...[
-                          Icon(Icons.check_circle, color: AppTheme.accentColor, size: 16),
+                          // 체크가 '툭' 하고 나타나도록 살짝 오버슈트
+                          Transform.scale(
+                            scale: _justVoted
+                                ? Curves.easeOutBack
+                                    .transform(_animController.value)
+                                    .clamp(0.0, 1.2)
+                                : 1.0,
+                            child: Icon(Icons.check_circle,
+                                color: AppTheme.accentColor, size: 16),
+                          ),
                           const SizedBox(width: 6),
                         ],
                         Flexible(
                           child: Text(
                             widget.button.text,
                             style: TextStyle(
-                              color: _isMyVote ? Colors.white : Colors.white70,
+                              color: _isMyVote
+                                  ? AppTheme.textPrimary
+                                  : AppTheme.textSecondary,
                               fontSize: 14,
                               fontWeight: _isMyVote ? FontWeight.w600 : FontWeight.w400,
                             ),
@@ -174,9 +196,9 @@ class _VoteButtonState extends State<VoteButton>
                   ),
                   // 퍼센트 + 투표수
                   Text(
-                    '$displayPercent%  ${widget.button.votes}표',
+                    '$displayPercent%  $displayVotes표',
                     style: TextStyle(
-                      color: _isMyVote ? AppTheme.accentColor : Colors.white54,
+                      color: _isMyVote ? AppTheme.accentColor : AppTheme.textTertiary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -193,6 +215,8 @@ class _VoteButtonState extends State<VoteButton>
   Future<void> _handleVote(BuildContext context) async {
     // UC02 기본흐름 2: 햅틱 진동
     HapticFeedback.mediumImpact();
+    // 💫 누른 자리에서 이모지가 터진다 (Overlay라 버튼 밖으로 날아간다)
+    showVoteBurst(context);
 
     // 로컬 즉시 반영 (Optimistic UI)
     widget.button.votes += 1;
