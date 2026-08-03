@@ -46,3 +46,4 @@ app.*.map.json
 
 key.properties
 *.env
+dart_define.json
