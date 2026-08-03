@@ -10,5 +10,5 @@
 class AppInfo {
   AppInfo._();
 
-  static const String name = '타닥';
+  static const String name = '독백';
 }
