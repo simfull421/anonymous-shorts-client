@@ -41,8 +41,11 @@ class _WriteShortsFormState extends State<WriteShortsForm> {
   // List<Map<String, dynamic>> _bgmAds = [];
 
   // URL 패턴 정규식 (UC04 E1)
-  static final RegExp _urlPattern =
-      RegExp(r'(https?://|www\.)', caseSensitive: false);
+  /// 서버의 ContainsUrl과 같은 기준. 한쪽만 느슨하면 그쪽으로 새어 나간다.
+  static final RegExp _urlPattern = RegExp(
+    r'(https?://|www\.|\b[\w\-]+\.(com|net|org|kr|co\.kr|io|me|ly|gg|xyz|link|page|site|app|shop|store|info|biz|tv|cc|to|be)\b)',
+    caseSensitive: false,
+  );
 
   @override
   void initState() {

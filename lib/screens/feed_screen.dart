@@ -605,7 +605,8 @@ class _FeedScreenState extends State<FeedScreen> {
     return Semantics(
       button: true,
       label: canWrite
-          ? '쇼츠 쓰기. 크레딧 ${CreditManager.balance}개, 작성 가능'
+          ? '쇼츠 쓰기. 크레딧 ${CreditManager.balance}개'
+              '${CreditManager.balance >= CreditManager.maxCredit ? ", 상한 ${CreditManager.maxCredit}개까지 꽉 찼어요. 투표해도 더 모이지 않아요" : ", 작성 가능"}'
           : '쇼츠 쓰기. 크레딧 ${CreditManager.balance}개, '
               '${CreditManager.writeCost}개가 모이면 쓸 수 있어요',
       excludeSemantics: true,
