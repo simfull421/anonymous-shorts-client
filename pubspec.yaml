@@ -1,5 +1,5 @@
 name: anonymous_shorts
-description: "A new Flutter project."
+description: "타닥 - 24시간 후 사라지는 익명 투표 앱"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -59,16 +59,17 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # 런처 아이콘 설정 — 사용법:
-# 1) Logo.png를 assets/icon/logo.png 로 복사
+# 1) assets/icon/1024.png 교체 시 이 파일 하나만 바꾸면 됨 (구버전 Logo.png는 더 이상 미사용)
 # 2) flutter pub get
 # 3) dart run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/icon/Logo.png"
-  # 안드로이드 적응형 아이콘 (배경색은 앱 다크 테마와 통일)
+  image_path: "assets/icon/1024.png"
+  # 안드로이드 적응형 아이콘. 전경 이미지가 그라데이션까지 포함한 불투명 이미지라
+  # 아래 배경색은 실제로는 가려져서 안 보임 (전경이 이미 배경까지 그리고 있음).
   adaptive_icon_background: "#090616"
-  adaptive_icon_foreground: "assets/icon/Logo.png"
+  adaptive_icon_foreground: "assets/icon/1024.png"
 
 # The following section is specific to Flutter packages.
 flutter:

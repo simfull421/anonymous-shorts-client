@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
+import '../config/app_info.dart';
 import '../config/app_links.dart';
 import '../theme/theme_controller.dart';
 
@@ -51,7 +52,7 @@ class _ConsentScreenState extends State<ConsentScreen> {
               const Spacer(flex: 2),
               // 앱 타이틀
               Text(
-                '익명쇼츠',
+                AppInfo.name,
                 style: AppTheme.mainContentStyle.copyWith(fontSize: 40),
               ),
               const SizedBox(height: 12),

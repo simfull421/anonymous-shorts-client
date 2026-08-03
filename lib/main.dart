@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_theme.dart';
+import 'config/app_info.dart';
 import 'theme/app_palette.dart';
 import 'theme/theme_controller.dart';
 import 'screens/feed_screen.dart';
@@ -74,7 +75,7 @@ class MyApp extends StatelessWidget {
         );
 
         return MaterialApp(
-          title: '익명쇼츠',
+          title: AppInfo.name,
           theme: AppTheme.themeData,
           debugShowCheckedModeBanner: false,
           initialRoute: consentAccepted ? '/' : '/consent',

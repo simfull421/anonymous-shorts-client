@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_theme.dart';
+import '../config/app_info.dart';
 import '../config/app_links.dart';
 import '../theme/app_palette.dart';
 import '../theme/theme_controller.dart';
@@ -131,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 6),
                 child: Text(
-                  '익명쇼츠 v1.1.0',
+                  '${AppInfo.name} v1.1.0',
                   style: TextStyle(color: AppTheme.textDisabled, fontSize: 12),
                 ),
               ),
@@ -353,7 +354,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Navigator.pop(sheetContext);
                   showLicensePage(
                     context: context,
-                    applicationName: '익명쇼츠',
+                    applicationName: AppInfo.name,
                     applicationVersion: 'v1.1.0',
                   );
                 },
@@ -587,7 +588,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (data != null && mounted) {
         final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
         await SharePlus.instance.share(
-          ShareParams(text: jsonStr, subject: '익명쇼츠 - 내 데이터'),
+          ShareParams(text: jsonStr, subject: '${AppInfo.name} - 내 데이터'),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

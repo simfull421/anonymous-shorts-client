@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 기본(영어권 및 기타 로케일) 앱 표시 이름 -->
-    <string name="app_name">Anonymous Shorts</string>
+    <string name="app_name">Tadak</string>
 </resources>

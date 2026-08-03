@@ -1,6 +1,6 @@
-# anonymous_shorts
+# 타닥 (Tadak)
 
-A new Flutter project.
+24시간 후 사라지는 익명 투표 앱.
 
 ## Getting Started
 
