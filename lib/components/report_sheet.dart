@@ -83,6 +83,17 @@ class _ReportSheet extends StatelessWidget {
               highlight: true,
               onTap: () => _submitUrgentReport(context, '폭력·자해 조장'),
             ),
+            // 만 14세 미만 추정 → 임계치 누적을 기다리면 아동 데이터가 계속 남는다.
+            // 개인정보위 「아동·청소년 개인정보 보호 안내서」(2024.12) 27쪽의
+            // '사용자 간 모니터링을 통한 만 14세 미만 사용자 신고' 장치에 해당.
+            _reasonTile(
+              context,
+              icon: Icons.child_care_outlined,
+              title: '만 14세 미만으로 보여요',
+              subtitle: '운영자가 직접 확인해요',
+              highlight: true,
+              onTap: () => _submitUrgentReport(context, '만 14세 미만 이용 추정'),
+            ),
 
             const SizedBox(height: 14),
             Divider(color: AppTheme.dividerColor, height: 1),

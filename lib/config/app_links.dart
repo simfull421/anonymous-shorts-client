@@ -23,8 +23,83 @@ class AppLinks {
   /// 운영자 연락처 — 권리침해 신고·문의 접수 창구
   static const String operatorEmail = 'anonymous.shorts.official@gmail.com';
 
-  /// 자살예방 상담전화
+  /// 자살예방 상담전화 (국내). 국가별 안내처는 CrisisLine을 사용한다.
   static const String suicidePreventionLine = '109';
+}
+
+/// 🫂 위기상담 안내처 — 기기 지역에 따라 분기한다.
+///
+/// 한 나라 번호만 하드코딩해 두면, 다른 나라 이용자에게는 걸어도
+/// 닿지 않는 번호를 위기 상황에 보여주게 된다.
+/// 확인되지 않은 나라의 번호는 추측해서 채우지 않고,
+/// 국가별 상담처 목록(findahelpline.com)으로 안내한다.
+class CrisisLine {
+  const CrisisLine({
+    required this.orgName,
+    required this.display,
+    required this.dial,
+    required this.note,
+  });
+
+  /// 기관명 (예: 자살예방 상담전화, Samaritans)
+  final String orgName;
+
+  /// 화면 표기 (공백 포함 가능 — 예: '116 123')
+  final String display;
+
+  /// 실제 발신 번호. null이면 전화 대신 웹 안내로 대체한다.
+  final String? dial;
+
+  final String note;
+
+  /// 전화 발신이 아니라 웹 목록으로 안내해야 하는 경우
+  bool get isWebOnly => dial == null;
+
+  static const CrisisLine kr = CrisisLine(
+    orgName: '자살예방 상담전화',
+    display: '109',
+    dial: '109',
+    note: '24시간 · 무료 · 익명 상담',
+  );
+
+  static const CrisisLine us = CrisisLine(
+    orgName: 'Suicide & Crisis Lifeline',
+    display: '988',
+    dial: '988',
+    note: '24/7 · Free · Confidential',
+  );
+
+  static const CrisisLine gb = CrisisLine(
+    orgName: 'Samaritans',
+    display: '116 123',
+    dial: '116123',
+    note: '24/7 · Free · Confidential',
+  );
+
+  /// 등록되지 않은 국가 — 틀린 번호를 보여주는 것보다 정확한 목록이 낫다.
+  static const CrisisLine worldwide = CrisisLine(
+    orgName: 'Find a helpline near you',
+    display: 'findahelpline.com',
+    dial: null,
+    note: 'Helplines by country',
+  );
+
+  static const String worldwideUrl = 'https://findahelpline.com';
+
+  /// 기기 지역 설정으로 안내처를 고른다.
+  static CrisisLine forLocale(Locale locale) {
+    switch (locale.countryCode) {
+      case 'KR':
+        return kr;
+      case 'US':
+        return us;
+      case 'GB':
+        return gb;
+    }
+    // 국가 정보가 없는 로케일(예: 'ko')은 언어로 추정한다.
+    if (locale.languageCode == 'ko') return kr;
+    return worldwide;
+  }
 }
 
 /// 외부 브라우저 → 인앱 웹뷰 순으로 시도하고, 모두 실패하면 스낵바로 안내한다.
