@@ -1,17 +1,21 @@
 # 독백 (Dokbaek)
+24시간 후 사라지는 익명 텍스트 투표 앱
 
-24시간 후 사라지는 익명 투표 앱.
+[Google Play에서 보기](https://play.google.com/store/apps/details?id=com.anonymous.shorts)
 
-## Getting Started
+## 개요
+- 회원가입 없이 기기 UUID만으로 이용
+- 게시물은 24시간 후 자동 소멸
+- 댓글 대신 작성자가 정한 반응 버튼으로만 응답
 
-This project is a starting point for a Flutter application.
+## 기술 스택
+Flutter/Dart · C#/.NET · MySQL · Railway
 
-A few resources to get you started if this is your first Flutter project:
+## 주요 구현
+- 시간 감가상각 기반 피드 정렬
+- 크레딧 시스템으로 읽기 전용 이용자 억제
+- OpenAI Moderation API 기반 콘텐츠 검수
+- 30분 주기 스케줄러로 만료 데이터 자동 파기
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 설계 기록
+왜 그렇게 만들었는지 → [ADR 문서](https://shining-juice-96b.notion.site/38acbc...)
