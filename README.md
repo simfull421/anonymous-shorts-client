@@ -18,4 +18,4 @@ Flutter/Dart · C#/.NET · MySQL · Railway
 - 30분 주기 스케줄러로 만료 데이터 자동 파기
 
 ## 설계 기록
-왜 그렇게 만들었는지 → [ADR 문서](https://shining-juice-96b.notion.site/3accbc2f0ed480688424fbab3f2022c6)
+왜 그렇게 만들었는지 → [ADR 문서](https://shining-juice-96b.notion.site/38acbc2f0ed480cfb450cdf37022ad15?v=38acbc2f0ed4806a96e5000c0540e2d7)
