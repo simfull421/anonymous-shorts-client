@@ -2,7 +2,7 @@
 
 **24시간 뒤 사라지는 익명 텍스트 투표 앱.** 기획부터 개발, 출시, 운영까지 혼자 진행했습니다.
 
-[Google Play에서 보기](https://play.google.com/store/apps/details?id=com.anonymous.shorts) · [설계 기록(ADR)](https://shining-juice-96b.notion.site/38acbc2f0ed480cfb450cdf37022ad15?v=38acbc2f0ed4806a96e5000c0540e2d7)
+[Google Play에서 보기](https://play.google.com/store/apps/details?id=com.anonymous.shorts) · [설계 기록(ADR)](https://shining-juice-96b.notion.site/38acbc2f0ed480cfb450cdf37022ad15?v=38acbc2f0ed4806a96e5000c0540e2d7)[처리방침·약관](https://github.com/simfull421/anonymous-shorts-privacy)
 
 ![독백 한눈에 보기](assets/overview.png)
 
